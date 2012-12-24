@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--
+/**
+ * @project JSDK JavaScript Development Kit
+ * @copyright Copyright(c) 2004-2012, Dragonfly.org. All rights reserved.
+ * @license LGPLv3
+ * @author fengchun
+-->
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>JSDK Example</title>
+
+<script language="JavaScript" type="text/javascript" src="../../source/core/JS-base.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/ClassLoader.js"></script>
+
+
+
+<script>
+JS.setPath({
+	'JS': '../../source',
+	'my': 'cat/v1',
+	'test': '.'
+});
+
+var objectClass = JS.Object.$class;
+console.log(objectClass.getName());
+console.log(objectClass.getSuperName());
+console.log(objectClass.getConstructor());
+console.log(objectClass.getSuperClass());
+
+function test1(){
+	JS.require(['JS.util.Random','my.CAT1'], function(){
+		var cat = JS.create('my.CAT1', 'white', 10);
+				
+		console.log(my);
+		console.log(my.CAT1.$class.getName()=='my.CAT1');
+		console.log(cat.getClass().getSuperClass().getSuperClass()===JS.Object.$class)
+		console.log(cat.sleep());
+	})	
+}
+
+function test2(){
+	JS.require('my.CAT2', function(){
+		console.log(JS.Object===JS.Class.forName('my.CAT2').getSuperClass().getConstructor());
+		console.log(my.CAT2);
+		console.log(my.CAT2.$class.getClassLoader());
+	})	
+}
+
+function test3(){
+	JS.require(['test.cc.C5','test.cc.C6'], function(){
+		console.log(test.cc);
+		console.log(JS.Class.getClasses());
+		
+		for(var i=1;i<7;i++){
+			var c = JS.create('test.cc.C'+i);
+			console.log(c.$className+'\'s <method> is '+c.method());
+		}		
+	})	
+}
+
+</script>
+</head>
+
+<body>
+<button onclick="test1();">test1</button>
+<button onclick="test2();">test2</button>
+<button onclick="test3();">test3</button>
+</body>
+</html>
