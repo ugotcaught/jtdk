@@ -21,20 +21,21 @@
  * @param {String} className
  * @throws {Error} when not found the class 
  */
-JS.Class = function(classInfo, loader){
+JS.Class = function(classInfo){
 	if(!classInfo['extend'] && classInfo['className']!='JS.Object'){
 		classInfo['extend'] = 'JS.Object';
 	}
 	
 	this._classInfo = classInfo;
-	this._ctor = loader.getPackage(this._classInfo['packageName'])[this._classInfo['simpleName']];
-	
-	this.getClassLoader = function(){
-		return loader;
-	};
+	this._ctor = JS.ns(this._classInfo['packageName'])[this._classInfo['simpleName']];
 	
 	if(!this._ctor) throw new Error('Not found the class:<'+className+'> by loader.');
 	this._ctor.$class = this;
+	
+	var me = this, o = this._ctor.prototype?this._ctor.prototype:this._ctor;
+	o.getClass = function(){
+		return me;
+	}	
 };
 
 JS.mix(JS.Class.prototype, {
@@ -86,10 +87,10 @@ JS.mix(JS.Class.prototype, {
 	/**
 	 * Returns the class constructor function.
 	 * 
-	 * @method getConstructor
+	 * @method getCtor
 	 * @return {Function} constructor function
 	 */
-	getConstructor: function(){
+	getCtor: function(){
 		return this._ctor;
 	},
 	/**
@@ -99,7 +100,7 @@ JS.mix(JS.Class.prototype, {
 	 * @return {JS.Class}
 	 */
 	getSuperClass: function(){
-		return this.getClassLoader().findClass(this.getSuperName());
+		return JS.Loader.getClass(this.getSuperName());
 	},
 	/**
 	 * Returns a new instance of the class.
@@ -123,7 +124,7 @@ JS.mix(JS.Class.prototype, {
 	 * @return {Boolean}
 	 */
 	equals: function(clazz){
-		return clazz && this.getName()===clazz.getName() && this.getClassLoader()===clazz.getClassLoader();
+		return clazz && this.getName()===clazz.getName();
 	},
 	/**
 	 * Returns the classe's all fields.
@@ -193,27 +194,20 @@ JS.mix(JS.Class, {
 	 * @method forName
 	 * @static
 	 * @param {String} className
-	 * @param {ClassLoader} classloader:optional The default is JS.AppLoader
 	 * @return {JS.Class}
 	 */
-	forName: function(className, classloader){
-		var loader = classloader||JS.AppLoader;
-		return loader.findClass(className);
+	forName: function(className){
+		return JS.Loader.getClass(className);
 	},
 	/**
-	 * Returns all loaded classes by JSDK.
+	 * Returns all classes by JSDK.
 	 * 
 	 * @method getClasses
 	 * @static
-	 * @param {ClassLoader} loader:optional 
 	 * @return {JS.Class[]}
 	 */
-	getClasses: function(loader){
-		if(loader) return loader.getClasses();
-		
-		var bootClasses = JS.BootLoader.getClasses(),
-			appClasses = JS.AppLoader.getClasses();
-		return JS.mix(bootClasses, appClasses, true);
+	getClasses: function(){
+		return JS.Loader.getClasses();
 	}
 });
 
@@ -333,7 +327,7 @@ JS.ClassBuilder = {
 	},
 	_mixs: function(classp, mixs, loader){
 		for ( var i = 0; i < mixs.length; i++) {
-			var ctor = loader.findClass(mixs[i]).getConstructor();			
+			var ctor = loader.getClass(mixs[i]).getCtor();			
 			JS.mix(classp.prototype, ctor.prototype);
 		}
 	},
@@ -348,7 +342,7 @@ JS.ClassBuilder = {
 		return this._build(classInfo, data, loader);
 	},
 	_build: function(classInfo, data, loader){
-		var pkg =  loader.getPackage(classInfo.packageName),
+		var pkg =  JS.ns(classInfo.packageName),
 			sname = classInfo.simpleName,
 		    fname = classInfo.className;
 		
@@ -362,9 +356,7 @@ JS.ClassBuilder = {
 		
 		var subc = null;
 		if(singleton){
-			pkg[sname] = {
-				$className: fname,
-				$classLoader: loader
+			pkg[sname] = {				
 			};
 			subc = pkg[sname];
 			JS.mix(subc, statics);
@@ -373,9 +365,7 @@ JS.ClassBuilder = {
 		}else{
 			var me = this;
 			pkg[sname] = function(){
-				pkg[sname].superproto.constructor.apply(this, arguments);
-				this.$className = fname;
-				this.$classLoader = loader;
+				pkg[sname].superproto.constructor.apply(this, arguments);				
 				
 				me._genConstructorFields(this, fields);
 				conFn.apply(this, arguments);				
@@ -383,7 +373,7 @@ JS.ClassBuilder = {
 			subc = pkg[sname];
 			this._handleFields(subc, fields, data);
 			
-			var superCtor = loader.findClass(extend).getConstructor();			
+			var superCtor = loader.getClass(extend).getCtor();			
 			this._extend(subc, superCtor);
 			this._mixs(subc, mixins, loader);
 			this._overrides(subc, data, statics);

@@ -16,7 +16,7 @@
 <script language="JavaScript" type="text/javascript" src="../../source/core/JS-base.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
-<script language="JavaScript" type="text/javascript" src="../../source/core/ClassLoader.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
 
 
 
@@ -29,8 +29,8 @@ JS.setPath({
 
 var objectClass = JS.Object.$class;
 console.log(objectClass.getName());
+console.log(objectClass.getCtor());
 console.log(objectClass.getSuperName());
-console.log(objectClass.getConstructor());
 console.log(objectClass.getSuperClass());
 
 function test1(){
@@ -46,9 +46,8 @@ function test1(){
 
 function test2(){
 	JS.require('my.CAT2', function(){
-		console.log(JS.Object===JS.Class.forName('my.CAT2').getSuperClass().getConstructor());
+		console.log(JS.Object===JS.Class.forName('my.CAT2').getSuperClass().getCtor());
 		console.log(my.CAT2);
-		console.log(my.CAT2.$class.getClassLoader());
 	})	
 }
 

@@ -16,7 +16,7 @@
 <script language="JavaScript" type="text/javascript" src="../../source/core/JS-base.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
-<script language="JavaScript" type="text/javascript" src="../../source/core/ClassLoader.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
 
 <script>
 JS.setPath({
@@ -29,10 +29,10 @@ function testDate(){
 		console.log(V.isDate('1200-1-1'));
 		console.log(V.isDate('1970-01-01'));
 		console.log(V.isDate('1000-1-1'));
-		console.log(V.isDate('0-1-1'));
 		console.log(V.isDate('11/1/1'));
 		
-		console.log(V.isDate('0-0-1'));
+		console.log(V.isDate('0-1-1'));
+		console.log(V.isDate('10-0-1'));
 		console.log(V.isDate('177/1/1'));
 		console.log(V.isDate('1977/13/14'));
 		console.log(V.isDate('1977/12/32'));
@@ -58,6 +58,7 @@ function testIP(){
 		var V = JS.util.Validator;
 		console.log(V.isIP('255.255.255.255'));
 		console.log(V.isIP('0.0.0.0'));
+		
 		console.log(V.isIP('0.0.0'));
 		console.log(V.isIP('0.0.0.256'));
 		console.log(V.isIP('0.0.0.-255'));

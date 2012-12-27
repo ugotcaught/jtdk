@@ -40,7 +40,7 @@ var _buildClass = function(className){
 	if(!d) return false;
 	var	info = d['info'],
 		data = d['data'],
-		loader = className.startsWith('JS.')?JS.BootLoader:JS.AppLoader;
+		loader = JS.Loader;
 	
 	if(JS.ClassBuilder.build(info, data, loader)){	
 		loader.newClass(info);
@@ -56,7 +56,7 @@ var _buildClass = function(className){
 var _check4Requires= function(key){
 	var names = _requireCallbacks[key]['names'],
 		fns = _requireCallbacks[key]['fns'];
-	if(names.every(function(a){return JS.AppLoader.hasClass(a)},this)) {
+	if(names.every(function(a){return JS.Loader.hasClass(a)},this)) {
 		fns.forEach(function(fn){
 			fn.call();
 		});
@@ -73,17 +73,7 @@ var _callback4Requires= function(name){
 	}
 }
 	
-/**
- * @class JS.ClassLoader
- */
-JS.ClassLoader = function(id, parent){
-	this._id = id;
-	this._parent = parent;	
-	this._classes = {};
-	
-}
-
-var _paths = {};	
+var _classes = {}, _paths = {};	
 var _findClassPathKey = function(className){
 	var pos = className.lastIndexOf('.'),
 		pName = className.slice(0, pos);
@@ -105,70 +95,53 @@ var _getScriptPath = function(className){
 	return className+'.js';
 }
 /**
- * @method setPath
- * @param {Object} pathKV
- * @public
+ * @class JS.Loader
  */
-JS.ClassLoader.setPath = function(ps){
-	JS.mix(_paths, ps);
-}
-JS.ClassLoader.getPath = function(key){
-	return _paths[key];
-}
-
-JS.ClassLoader.require = function(classNames, onFinished){
-	var names = Array.toArray(classNames);
-	if(JS.isEmpty(names)) return;
-	
-	var key = names.join(',');		
-	if(JS.isFunction(onFinished)){
-		if(_requireCallbacks[key]) {
-			_requireCallbacks[key]['fns'].push(onFinished);
-		}else{
-			_requireCallbacks[key] = {
-				names: names, fns: [onFinished]
+JS.Loader = {
+	setPath: function(ps){
+		JS.mix(_paths, ps);
+	},
+	getPath: function(key){
+		return _paths[key];
+	},
+	require: function(classNames, onFinished){
+		var names = Array.toArray(classNames);
+		if(JS.isEmpty(names)) return;
+		
+		var key = names.join(',');		
+		if(JS.isFunction(onFinished)){
+			if(_requireCallbacks[key]) {
+				_requireCallbacks[key]['fns'].push(onFinished);
+			}else{
+				_requireCallbacks[key] = {
+					names: names, fns: [onFinished]
+				}
 			}
 		}
-	}
-	if(!_check4Requires(key)){
-		names.forEach(function(a){
-			if(a!='JS.Object') JS.AppLoader.loadClass(a);
-		},this);
-	}		
-}
-
-JS.ClassLoader.prototype = {
-	hasClass: function(name){
-		return this.findClass(name)?true:false;
+		if(!_check4Requires(key)){
+			names.forEach(function(a){
+				if(a!='JS.Object') this.loadClass(a);
+			},this);
+		}		
 	},	
-	findClass: function(name){
-		if(!name) return null;
-		
-		var clazz = this._classes[name];
-		if(clazz) return clazz;
-		
-		if(this._parent) {
-			clazz = this._parent.findClass(name);
-			if(clazz) return clazz;
-		}
-		
-		return null;
-	},
-	getPackage: function(packageName){
-		return JS.ns(packageName, window);
+	hasClass: function(name){
+		return this.getClass(name)?true:false;
+	},	
+	getClass: function(name){
+		return _classes[name];
 	},
 	getClasses: function(){
-		return this._classes;
+		return _classes;
 	},
 	/**
 	 * @method create
 	 * @param {String} className
-	 * @param {Object..} arguments[1..n]
+	 * @param {Object..} args
 	 * @return {Object}
 	 */
 	create: function(){
 		var className = arguments[0],
-			clazz = this.findClass(className);
+			clazz = this.getClass(className);
 		if(!clazz) throw new Error('Create the class:<'+className+'> failed by loader.');
 			
 		return JS.Class.prototype.newInstance.apply(clazz, [].slice.call(arguments,1));
@@ -207,19 +180,15 @@ JS.ClassLoader.prototype = {
 		if(this.hasClass(data.className)) return;
 		
 		var clazz = new JS.Class(data, this);
-		this._classes[data.className] = clazz;	
+		_classes[data.className] = clazz;	
 	},
 	loadClass: function(name){
 		if(this.hasClass(name)) return;
 		
-		if(name.startsWith('JS.') && this._parent!=null) {
-			JS.BootLoader.loadClass(name);
-		}else{
-			this._loadJS(name,function(){
-					_buildClass(name);
-				},this
-			)
-		}
+		this._loadJS(name,function(){
+				_buildClass(name);
+			},this
+		)
 	},
 	_loadJS: function(className, onloaded, scope){
 		var isLib = className.startsWith('lib:'),
@@ -267,7 +236,4 @@ JS.ClassLoader.prototype = {
 })();
 
 JS.setPath({'JS': '.'});
-JS.BootLoader = new JS.ClassLoader('JS.BootLoader');
-JS.BootLoader.newClass('JS.Object');
-
-JS.AppLoader = new JS.ClassLoader('JS.AppLoader',JS.BootLoader);
+JS.Loader.newClass('JS.Object');

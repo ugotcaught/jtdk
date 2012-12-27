@@ -191,12 +191,36 @@ JS = {
     isIterable: function(value) {
         return (value && typeof value !== 'string') ? value.length !== undefined : false;
     },
+    hasOwnProperty: (OP.hasOwnProperty) ?
+	    function(o, prop) {
+	        return o && o.hasOwnProperty(prop);
+	    } : function(o, prop) {
+	        return JS.isDefined(o[prop]) && 
+	                o.constructor.prototype[prop] !== o[prop];
+	    },
+    ns: function(pkg, namespace) {
+    	if(!pkg) return namespace||window;
+    		
+    	var win = namespace||window
+    		,p = pkg.split('.')
+        	,len = p.length
+        	,p0 = p[0];
+    	if(typeof win[p0]=="undefined") win[p0] = {};
+    	
+    	var b = win[p0];
+        for (var i=1; i<len; i++) {
+    		var pi = p[i]; if(!pi) break;	             
+    		b[pi] = b[pi]||{};
+    		b = b[pi];
+        }
+        return b;
+    },
     /**
      * @method setPath
      * @param {Object} kvs
      */
     setPath: function(kvs){
-    	JS.ClassLoader.setPath(kvs);
+    	JS.Loader.setPath(kvs);
 	},
     /**
 	 * @method requires
@@ -205,7 +229,7 @@ JS = {
 	 * @param {ClassLoader} loader:optional
 	 */
 	require: function(classNames, onFinished){
-		JS.ClassLoader.require(classNames, onFinished);
+		JS.Loader.require(classNames, onFinished);
 	},
     /**
 	 * @method define
@@ -213,19 +237,7 @@ JS = {
 	 * @param {Object} data
 	 */
     define: function(className, data){
-    	var name = null, loader = null;
-    	
-    	if(className.startsWith('JS.')){
-    		name = className;
-    		loader = JS.BootLoader;
-    	}else if(JS.isString(className)){
-    		name = className;
-    		loader = JS.AppLoader;
-    	}else{
-    		name = className['name'];
-    		loader = className['loader'];
-    	}
-    	loader.defineClass(name, data);
+    	JS.Loader.defineClass(className, data);
 	},
 	/**
 	 * @method create
@@ -233,9 +245,8 @@ JS = {
 	 * @param {Object..} arguments[1..n]
 	 * @return {Object}
 	 */
-	create: function(className){
-		var loader = className.startsWith('JS.')?JS.BootLoader:JS.AppLoader;
-		return JS.ClassLoader.prototype.create.apply(loader, [].slice.call(arguments,0));
+	create: function(){
+		return JS.Loader.create.apply(JS.Loader, [].slice.call(arguments,0));
 	}
 }
 
@@ -287,32 +298,6 @@ JS.typeOf = function(o) {
    }
    
    return TYPES[type] || TYPES[toString.call(o)];
-}
-
-JS.hasOwnProperty = (OP.hasOwnProperty) ?
-	    function(o, prop) {
-	        return o && o.hasOwnProperty(prop);
-	    } : function(o, prop) {
-	        return JS.isDefined(o[prop]) && 
-	                o.constructor.prototype[prop] !== o[prop];
-	    };
-
-JS.ns = function(pkg, namespace) {
-	if(!pkg) return namespace||window;
-		
-	var win = namespace||window
-		,p = pkg.split('.')
-    	,len = p.length
-    	,p0 = p[0];
-	if(typeof win[p0]=="undefined") win[p0] = {};
-	
-	var b = win[p0];
-    for (var i=1; i<len; i++) {
-		var pi = p[i]; if(!pi) break;	             
-		b[pi] = b[pi]||{};
-		b = b[pi];
-    }
-    return b;
 }
 
 var _hasEnumBug = !{valueOf: 0}.propertyIsEnumerable('valueOf');

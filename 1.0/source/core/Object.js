@@ -15,15 +15,7 @@
  * @class JS.Object
  * @constructor
  */
-JS.Object = function(){
-	/**
-	 * @field {String} $className 
-	 */
-	this.$className = 'JS.Object';
-	/**
-	 * @field {String} $classLoader 
-	 */
-	this.$classLoader = JS.BootLoader;
+JS.Object = function(){	
 };
 
 JS.mix(JS.Object.prototype, {
@@ -34,7 +26,7 @@ JS.mix(JS.Object.prototype, {
 	 * @return {JS.Class}
 	 */
 	getClass: function(){
-		return this.$classLoader.findClass(this.$className);
+		return JS.Object.$class;
 	},
 	/**
 	 * Returns the super class.

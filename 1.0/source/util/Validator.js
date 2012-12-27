@@ -17,7 +17,7 @@ var RULES = {
 	full_numbers: /^\d+$/,
 	full_letters: /^[A-Za-z]+$/,
 	letters_or_numbers: /^[A-Za-z\d]+$/,
-	date: /^(\d{1,4})(-|\/)(\d{1,2})(-|\/)(\d{1,2})$/,
+	date: /^(\d{2,4})(-|\/)(\d{1,2})(-|\/)(\d{1,2})$/,
 	time: /^(\d{1,2}):(\d{1,2}):(\d{1,2})(\.\d{1,3})*Z*$/,
 	email: /^\w+(((-|&)\w*)|(\.\w+))*\@[A-Za-z0-9]+((\-)[A-Za-z0-9]*|(\.)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/,
 	email_domain: /^@[A-Za-z0-9]+((\-)[A-Za-z0-9]*|(\.)[A-Za-z0-9]+)*\.[A-Za-z0-9]+$/,
@@ -64,8 +64,6 @@ JS.define('JS.util.Validator', {
 	},
 	/**
 	 * These formats are right:
-	 * y-mm-dd
-	 * y/mm/dd
 	 * yy-mm-dd
 	 * yy/mm/dd
 	 * yyyy-mm-dd
@@ -104,7 +102,7 @@ JS.define('JS.util.Validator', {
 	isTime: function(s, emptyOK){
 		if(JS.isEmpty(s)) return emptyOK?true:false;
 		
-		var reg = RULES['time'], result = s.match(reg);console.log(result)
+		var reg = RULES['time'], result = s.match(reg);
 	    if(!result){return false};
 	    
 	    if(!result[4]) result[4] = '000';
@@ -119,33 +117,8 @@ JS.define('JS.util.Validator', {
 	},
 	/**
 	 * These formats are right:
-	 * yyyy-mm-dd hh:mm:ss
-	 * yyyy-mm-dd hh:mm:ss.xxx
 	 * yyyy-mm-dd hh:mm:ss.xxxZ
-	 * yyyy-mm-ddThh:mm:ss
-	 * yyyy-mm-ddThh:mm:ss.xxx
-	 * yyyy-mm-ddThh:mm:ss.xxxZ
-	 * 
-	 * yyyy/mm/dd hh:mm:ss
-	 * yyyy/mm/dd hh:mm:ss.xxx
 	 * yyyy/mm/dd hh:mm:ss.xxxZ
-	 * yyyy/mm/ddThh:mm:ss
-	 * yyyy/mm/ddThh:mm:ss.xxx
-	 * yyyy/mm/ddThh:mm:ss.xxxZ
-	 * 
-	 * yy-mm-dd hh:mm:ss
-	 * yy-mm-dd hh:mm:ss.xxx
-	 * yy-mm-dd hh:mm:ss.xxxZ
-	 * yy-mm-ddThh:mm:ss
-	 * yy-mm-ddThh:mm:ss.xxx
-	 * yy-mm-ddThh:mm:ss.xxxZ
-	 * 
-	 * yy/mm/dd hh:mm:ss
-	 * yy/mm/dd hh:mm:ss.xxx
-	 * yy/mm/dd hh:mm:ss.xxxZ
-	 * yy/mm/ddThh:mm:ss
-	 * yy/mm/ddThh:mm:ss.xxx
-	 * yy/mm/ddThh:mm:ss.xxxZ
 	 * 
 	 * @method isDateTime
 	 * @param {String} str 
