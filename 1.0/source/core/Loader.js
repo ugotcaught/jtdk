@@ -28,52 +28,7 @@ var _getClassInfo = function(className){
 	}
 }
 
-var _requireCallbacks = {}, _definedClasses = {};
-
-var _buildAll = function(){
-	for(var name in _definedClasses) {
-		_buildClass(name);
-	}
-}
-var _buildClass = function(className){
-	var d = _definedClasses[className];
-	if(!d) return false;
-	var	info = d['info'],
-		data = d['data'],
-		loader = JS.Loader;
-	
-	if(JS.ClassBuilder.build(info, data, loader)){	
-		loader.newClass(info);
-		_callback4Requires(info['className']);
-		
-		delete _definedClasses[name];
-		_buildAll(loader);
-		return true;
-	}
-	return false;
-}
-
-var _check4Requires= function(key){
-	var names = _requireCallbacks[key]['names'],
-		fns = _requireCallbacks[key]['fns'];
-	if(names.every(function(a){return JS.Loader.hasClass(a)},this)) {
-		fns.forEach(function(fn){
-			fn.call();
-		});
-		delete _requireCallbacks[key];
-		return true;
-	}
-	return false;
-}
-var _callback4Requires= function(name){
-	for(k in _requireCallbacks) {
-		if((k+',').indexOf(name+',')>=0){
-			if(_check4Requires(k)) return;
-		}
-	}
-}
-	
-var _classes = {}, _paths = {};	
+var _definedClasses = {}, _loadedClasses = {}, _paths = {}, _events = {};	
 var _findClassPathKey = function(className){
 	var pos = className.lastIndexOf('.'),
 		pName = className.slice(0, pos);
@@ -104,34 +59,18 @@ JS.Loader = {
 	getPath: function(key){
 		return _paths[key];
 	},
-	require: function(classNames, onFinished){
-		var names = Array.toArray(classNames);
-		if(JS.isEmpty(names)) return;
-		
-		var key = names.join(',');		
-		if(JS.isFunction(onFinished)){
-			if(_requireCallbacks[key]) {
-				_requireCallbacks[key]['fns'].push(onFinished);
-			}else{
-				_requireCallbacks[key] = {
-					names: names, fns: [onFinished]
-				}
-			}
-		}
-		if(!_check4Requires(key)){
-			names.forEach(function(a){
-				if(a!='JS.Object') this.loadClass(a);
-			},this);
-		}		
-	},	
 	hasClass: function(name){
+		if(JS.isArray(name)){
+			return name.every(function(a){return this.hasClass(a)},this);
+		}
+		
 		return this.getClass(name)?true:false;
 	},	
 	getClass: function(name){
-		return _classes[name];
+		return _loadedClasses[name];
 	},
 	getClasses: function(){
-		return _classes;
+		return _loadedClasses;
 	},
 	/**
 	 * @method create
@@ -142,7 +81,7 @@ JS.Loader = {
 	create: function(){
 		var className = arguments[0],
 			clazz = this.getClass(className);
-		if(!clazz) throw new Error('Create the class:<'+className+'> failed by loader.');
+		if(!clazz) throw new Error('Create the class:<'+className+'> failed.');
 			
 		return JS.Class.prototype.newInstance.apply(clazz, [].slice.call(arguments,1));
 	},
@@ -168,27 +107,63 @@ JS.Loader = {
 			};
 		
 		if(JS.isEmpty(depends)){
-			_buildClass(name);
+			this._buildClass(name);
 		}else{
 			depends.forEach(function(a){
 				if(a!='JS.Object') this.loadClass(a);
 			},this);
 		}		
 	},
+	_buildAll: function(){
+		for(var name in _definedClasses) {
+			this._buildClass(name);
+		}
+	},
+	_buildClass: function(className){
+		var d = _definedClasses[className];
+		if(!d) return false;
+		var	info = d['info'],
+			data = d['data'];
+		
+		if(JS.ClassBuilder.build(info, data, this)){	
+			this.newClass(info);
+			this.fireEvent('classBuilded', info['className']);
+			
+			delete _definedClasses[name];
+			this._buildAll();
+			return true;
+		}
+		return false;
+	},
+	onEvent: function(name, fn){
+		var fns = _events[name];
+		if(!fns) fns = [];
+		fns.push(fn);
+		_events[name] = fns;
+	},
+	fireEvent: function(name, data){
+		var fns = _events[name];
+		if(fns) fns.forEach(function(fn){
+			fn.call(this, data);
+		},this);		
+	},
 	newClass: function(name){
 		var data = JS.isString(name)?_getClassInfo(name):name;
 		if(this.hasClass(data.className)) return;
 		
 		var clazz = new JS.Class(data, this);
-		_classes[data.className] = clazz;	
+		_loadedClasses[data.className] = clazz;	
 	},
 	loadClass: function(name){
-		if(this.hasClass(name)) return;
+		var names = Array.toArray(name);
 		
-		this._loadJS(name,function(){
-				_buildClass(name);
-			},this
-		)
+		names.forEach(function(a){
+			if(this.hasClass(a)) return;
+			
+			this._loadJS(a,function(){
+					this._buildClass(a);
+				},this);			
+		},this);		
 	},
 	_loadJS: function(className, onloaded, scope){
 		var isLib = className.startsWith('lib:'),

@@ -13,6 +13,24 @@
  * @requires /core/JS-base.js
  */
 (function() {
+var ns = function(pkg, namespace) {
+	if(!pkg) return namespace||window;
+	
+	var win = namespace||window
+		,p = pkg.split('.')
+    	,len = p.length
+    	,p0 = p[0];
+	if(typeof win[p0]=="undefined") win[p0] = {};
+	
+	var b = win[p0];
+    for (var i=1; i<len; i++) {
+		var pi = p[i]; if(!pi) break;	             
+		b[pi] = b[pi]||{};
+		b = b[pi];
+    }
+    return b;
+}	
+	
 /**
  * Only JSDK can creates Class objects.
  * @class JS.Class
@@ -27,7 +45,7 @@ JS.Class = function(classInfo){
 	}
 	
 	this._classInfo = classInfo;
-	this._ctor = JS.ns(this._classInfo['packageName'])[this._classInfo['simpleName']];
+	this._ctor = ns(this._classInfo['packageName'])[this._classInfo['simpleName']];
 	
 	if(!this._ctor) throw new Error('Not found the class:<'+className+'> by loader.');
 	this._ctor.$class = this;
@@ -217,7 +235,7 @@ JS.ClassBuilder = {
         F.prototype = superc.prototype;
         subc.prototype = new F();
         subc.prototype.constructor = subc;
-        subc.superproto = superc.prototype;
+        subc.superclass = superc.prototype;
         if (superc != Object && superc.prototype.constructor == Object.prototype.constructor) {
             superc.prototype.constructor = superc;
         }
@@ -246,7 +264,7 @@ JS.ClassBuilder = {
 		return str.substring(0,1).toUpperCase()+str.slice(1);
 	},
 	_getRealFieldName: function(fname){
-		if(fname.startsWith('get$') || fname.startsWith('get$')) return fname.length>4?fname.slice(4):null;
+		if(fname.startsWith('get$') || fname.startsWith('set$')) return fname.length>4?fname.slice(4):null;
 		return fname;
 	},
 	_genConstructorFields: function(thisp, fields){
@@ -342,7 +360,7 @@ JS.ClassBuilder = {
 		return this._build(classInfo, data, loader);
 	},
 	_build: function(classInfo, data, loader){
-		var pkg =  JS.ns(classInfo.packageName),
+		var pkg = ns(classInfo.packageName),
 			sname = classInfo.simpleName,
 		    fname = classInfo.className;
 		
@@ -365,7 +383,7 @@ JS.ClassBuilder = {
 		}else{
 			var me = this;
 			pkg[sname] = function(){
-				pkg[sname].superproto.constructor.apply(this, arguments);				
+				pkg[sname].superclass.constructor.apply(this, arguments);				
 				
 				me._genConstructorFields(this, fields);
 				conFn.apply(this, arguments);				

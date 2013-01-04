@@ -6,12 +6,14 @@
  * 
  * @copyright Copyright(c) 2004-2012, Dragonfly.org. All rights reserved.
  * @license LGPLv3
+ * @github https://github.com/fch415/jtdk
  * @website http://jsdk2.sourceforge.net/website/index.html
  * 
  * @version 1.0.0
  * @author feng.chun
  * @date 2012-11-21
  * @date 2012-12-20
+ * @date 2013-01-04
  * 
  * @version 0.6.2
  * @author feng.chun
@@ -191,29 +193,18 @@ JS = {
     isIterable: function(value) {
         return (value && typeof value !== 'string') ? value.length !== undefined : false;
     },
+    /**
+     * Returns true if the property key is exist in the object, false otherwise
+     * @param {Object} o The object to test
+     * @param {String} prop The property key
+     * @return {Boolean}
+     */
     hasOwnProperty: (OP.hasOwnProperty) ?
-	    function(o, prop) {
-	        return o && o.hasOwnProperty(prop);
-	    } : function(o, prop) {
-	        return JS.isDefined(o[prop]) && 
-	                o.constructor.prototype[prop] !== o[prop];
-	    },
-    ns: function(pkg, namespace) {
-    	if(!pkg) return namespace||window;
-    		
-    	var win = namespace||window
-    		,p = pkg.split('.')
-        	,len = p.length
-        	,p0 = p[0];
-    	if(typeof win[p0]=="undefined") win[p0] = {};
-    	
-    	var b = win[p0];
-        for (var i=1; i<len; i++) {
-    		var pi = p[i]; if(!pi) break;	             
-    		b[pi] = b[pi]||{};
-    		b = b[pi];
-        }
-        return b;
+    function(o, prop) {
+        return o && o.hasOwnProperty(prop);
+    } : function(o, prop) {
+        return JS.isDefined(o[prop]) && 
+                o.constructor.prototype[prop] !== o[prop];
     },
     /**
      * @method setPath
@@ -221,15 +212,6 @@ JS = {
      */
     setPath: function(kvs){
     	JS.Loader.setPath(kvs);
-	},
-    /**
-	 * @method requires
-	 * @param {String|String[]} classNames
-	 * @param {Function} onFinished
-	 * @param {ClassLoader} loader:optional
-	 */
-	require: function(classNames, onFinished){
-		JS.Loader.require(classNames, onFinished);
 	},
     /**
 	 * @method define
@@ -248,6 +230,52 @@ JS = {
 	create: function(){
 		return JS.Loader.create.apply(JS.Loader, [].slice.call(arguments,0));
 	}
+}
+
+var _requireCallbacks = {};
+var _callback4Requires= function(name){
+	for(k in _requireCallbacks) {
+		if((k+',').indexOf(name+',')>=0){
+			var names = _requireCallbacks[k]['names'];
+			if(JS.Loader.hasClass(names)) {
+				var	fns = _requireCallbacks[k]['fns'];
+				fns.forEach(function(fn){
+					fn.call();
+				});
+				delete _requireCallbacks[k];				
+				return;
+			}
+		}
+	}
+}
+/**
+ * @method requires
+ * @param {String|String[]} classNames
+ * @param {Function} onFinished
+ * @param {ClassLoader} loader:optional
+ */
+JS.require = function(classNames, onFinished){
+	var names = Array.toArray(classNames);
+	if(JS.isEmpty(names)) return;
+	
+	var loader = JS.Loader;
+	if(loader.hasClass(names)){
+		if(JS.isFunction(onFinished)) onFinished.call();
+	}else{
+		var key = names.join(',');		
+		if(JS.isFunction(onFinished)){
+			if(_requireCallbacks[key]) {
+				_requireCallbacks[key]['fns'].push(onFinished);
+			}else{
+				_requireCallbacks[key] = {
+					names: names, fns: [onFinished]
+				}
+			}
+		}
+		
+		loader.onEvent('classBuilded', _callback4Requires);
+		loader.loadClass(names);			
+	}			
 }
 
 var TYPES = {
@@ -1346,8 +1374,6 @@ Date.prototype.format = function(arg, thisP){
 		return this.toLocaleString();
 	}	
 }
-
-
 
 })();
 
