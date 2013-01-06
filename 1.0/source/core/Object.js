@@ -36,6 +36,16 @@ JS.mix(JS.Object.prototype, {
 	 */
 	getSuperClass: function(){
 		return this.getClass().getSuperClass();	
+	},
+	/**
+	 * Returns the name of class or package.
+	 * 
+	 * @method ns
+	 * @param {String} name
+	 * @return {Object}
+	 */
+	ns: function(name){
+		return this.getClass().getLoader().ns(name);	
 	}
 });
 

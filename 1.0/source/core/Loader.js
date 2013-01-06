@@ -16,7 +16,23 @@
  */
 (function() {
 var head = document.head||document.getElementsByTagName('head')[0];
+var ns = function(pkg, namespace) {
+	if(!pkg) return namespace||window;
 	
+	var win = namespace||window
+		,p = pkg.split('.')
+    	,len = p.length
+    	,p0 = p[0];
+	if(typeof win[p0]=="undefined") win[p0] = {};
+	
+	var b = win[p0];
+    for (var i=1; i<len; i++) {
+		var pi = p[i]; if(!pi) break;	             
+		b[pi] = b[pi]||{};
+		b = b[pi];
+    }
+    return b;
+}		
 var _getClassInfo = function(className){
 	var p = className.lastIndexOf('.'),
 		packageName = p<=0?'':className.slice(0, p),
@@ -27,62 +43,75 @@ var _getClassInfo = function(className){
 		simpleName: simpleName
 	}
 }
-
-var _definedClasses = {}, _loadedClasses = {}, _paths = {}, _events = {};	
-var _findClassPathKey = function(className){
+var _findClassPathKey = function(className, paths){
 	var pos = className.lastIndexOf('.'),
 		pName = className.slice(0, pos);
 	if(!pName) return null;
-	if(_paths[pName]) return pName;
+	if(paths[pName]) return pName;
 	
-	return _findClassPathKey(pName);
+	return _findClassPathKey(pName, paths);
 }
-var _getScriptPath = function(className){
-	var pathKey = _findClassPathKey(className);
-	    
-	if(pathKey){
-		className = className.replace(/\./gi, '/');
-		className = className.replace(pathKey.replace(/\./gi, '/'), _paths[pathKey]);			
-	}else{
-		className = className.replace(/\./gi, '/');	
-		className = './' + className;	
-	}
-	return className+'.js';
-}
+
+var loaders = {}; 
 /**
  * @class JS.Loader
  */
-JS.Loader = {
+JS.Loader = function(config){
+	this.id = config['id'];
+	this.parent = config['parent'];
+	if(this.id!='JS.ClassLoader' && !this.parent) this.parent = JS.ClassLoader;
+	
+	loaders[this.id] = this;	
+	this._definedClasses = {};
+	this._loadedClasses = {};
+	this._paths = config['paths']||{};
+	this._events = {};
+}
+
+JS.Loader.getLoader = function(id){
+	return loaders[id];
+}
+
+JS.Loader.prototype = {
 	setPath: function(ps){
-		JS.mix(_paths, ps);
+		JS.mix(this._paths, ps);
 	},
 	getPath: function(key){
-		return _paths[key];
+		var p = {};
+		
+		if(this.parent) p = JS.mix(p, this.parent.getPath());
+		p = JS.mix(p, this._paths);
+		
+		return key?p[key]:p;
+	},
+	ns: function(name){
+		return ns(name, this);
 	},
 	hasClass: function(name){
-		if(JS.isArray(name)){
-			return name.every(function(a){return this.hasClass(a)},this);
-		}
-		
-		return this.getClass(name)?true:false;
+		if(JS.isArray(name)) return name.every(function(a){return this.hasClass(a)},this);		
+		return this.findClass(name)?true:false;
 	},	
-	getClass: function(name){
-		return _loadedClasses[name];
+	findClass: function(name){
+		if(this.parent){
+			var clazz = this.parent.findClass(name);
+			if(clazz) return clazz;
+		}
+		return this._loadedClasses[name];
 	},
 	getClasses: function(){
-		return _loadedClasses;
+		return this._loadedClasses;
 	},
 	/**
 	 * @method create
 	 * @param {String} className
-	 * @param {Object..} args
+	 * @param {Object..} arguments[1..n]
 	 * @return {Object}
 	 */
 	create: function(){
 		var className = arguments[0],
-			clazz = this.getClass(className);
+		clazz = this.findClass(className);
 		if(!clazz) throw new Error('Create the class:<'+className+'> failed.');
-			
+		
 		return JS.Class.prototype.newInstance.apply(clazz, [].slice.call(arguments,1));
 	},
 	defineClass: function(name, data){
@@ -101,7 +130,7 @@ JS.Loader = {
 		info['extend'] = extend;
 		info['mixins'] = mixins;
 		
-		_definedClasses[name] = {
+		this._definedClasses[name] = {
 				data: data,
 				info: info
 			};
@@ -115,12 +144,12 @@ JS.Loader = {
 		}		
 	},
 	_buildAll: function(){
-		for(var name in _definedClasses) {
+		for(var name in this._definedClasses) {
 			this._buildClass(name);
 		}
 	},
 	_buildClass: function(className){
-		var d = _definedClasses[className];
+		var d = this._definedClasses[className];
 		if(!d) return false;
 		var	info = d['info'],
 			data = d['data'];
@@ -129,20 +158,20 @@ JS.Loader = {
 			this.newClass(info);
 			this.fireEvent('classBuilded', info['className']);
 			
-			delete _definedClasses[name];
+			delete this._definedClasses[name];
 			this._buildAll();
 			return true;
 		}
 		return false;
 	},
 	onEvent: function(name, fn){
-		var fns = _events[name];
+		var fns = this._events[name];
 		if(!fns) fns = [];
 		fns.push(fn);
-		_events[name] = fns;
+		this._events[name] = fns;
 	},
 	fireEvent: function(name, data){
-		var fns = _events[name];
+		var fns = this._events[name];
 		if(fns) fns.forEach(function(fn){
 			fn.call(this, data);
 		},this);		
@@ -152,7 +181,7 @@ JS.Loader = {
 		if(this.hasClass(data.className)) return;
 		
 		var clazz = new JS.Class(data, this);
-		_loadedClasses[data.className] = clazz;	
+		this._loadedClasses[data.className] = clazz;	
 	},
 	loadClass: function(name){
 		var names = Array.toArray(name);
@@ -165,16 +194,26 @@ JS.Loader = {
 				},this);			
 		},this);		
 	},
+	resolvePath: function(className){
+		var pathKey = _findClassPathKey(className, this.getPath());
+		    
+		if(pathKey){
+			className = className.replace(/\./gi, '/');
+			className = className.replace(pathKey.replace(/\./gi, '/'), this.getPath(pathKey));			
+		}else{
+			className = className.replace(/\./gi, '/');	
+			className = './' + className;	
+		}
+		return className+'.js';
+	},
 	_loadJS: function(className, onloaded, scope){
-		var isLib = className.startsWith('lib:'),
-			id = isLib?className.slice(4):className,
+//		var isLib = className.startsWith('lib:'),
+//			id = isLib?className.slice(4):className,
 			isLoaded = false;		
 		
-		if(isLib){
-			if(this.hasLib(id)) isLoaded = true;
-		}else if(this.hasClass(className)){
+		if(this.hasClass(className)){
 			isLoaded = true;
-		}else if(document.getElementById(id)){
+		}else if(document.getElementById(this.id+'_'+className)){
 			isLoaded = true;	
 		}	
 			
@@ -183,32 +222,52 @@ JS.Loader = {
 			return;
 		}	
         
-		var src = isLib?id:_getScriptPath(className);
-        this._loadScript(id, src, onloaded, scope);
+		var src = this.resolvePath(className);
+        this._loadScript(className, src, onloaded, scope);
 	},
-	_loadScript: function(id, src, onloaded, scope){
+	_readJS: function(url){
+		var xhr = null;
+		if (typeof XMLHttpRequest != 'undefined') {
+            xhr = new XMLHttpRequest();
+        } else {
+            xhr = new ActiveXObject('Microsoft.XMLHTTP');
+        }
+
+        try {
+            xhr.open('GET', url, false);
+            xhr.send(null);
+        }
+        catch (e) {
+            throw new Error('Read file<'+url+'> failed');
+        }
+        status = (xhr.status === 1223) ? 204 : xhr.status;
+
+        var txt = xhr.responseText;
+        xhr = null;// Maybe IE memory leak
+        
+        return txt;
+	},
+	_loadScript: function(name, src, onloaded, scope){
 		var script = document.createElement('script'),
         	onloadFn = function() {	
-				if(onloaded) onloaded.call(scope);
-            },
-            onerrorFn = function(){throw new Error('Load js file failed: '+src+'.')};
+				if(onloaded) onloaded.call(scope);				
+            };
 
-        script.id = id;
+        script.id = this.id+'_'+name;
 		script.type = 'text/javascript';
-        script.src = src + '?_dt=' + (new Date().getTime());
-        script.onload = onloadFn;
-        script.onerror = onerrorFn;
-        script.onreadystatechange = function() {//for IE
-        	if (this.readyState === 'loaded' || this.readyState === 'complete') {
-                onloadFn();
-            }
-        };
+		script.setAttribute('loaderid', this.id);
+		script.setAttribute('classname', name);
+
+		var code = this._readJS(src + '?_dt=' + (new Date().getTime()));
+		code = code.replace(/JS.define\(/g, 'JS.Loader.getLoader("'+this.id+'").defineClass(');
 		
-		head.appendChild(script);			
+    	script.text = code;
+    	head.insertBefore(script, head.firstChild);  
+		onloadFn();	
 	}
 }
 
 })();
 
-JS.setPath({'JS': '.'});
-JS.Loader.newClass('JS.Object');
+JS.ClassLoader = new JS.Loader({id:'JS.ClassLoader',paths:{'JS': '.'}});
+JS.ClassLoader.newClass('JS.Object');

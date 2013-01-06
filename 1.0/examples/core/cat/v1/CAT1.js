@@ -1,4 +1,6 @@
 JS.define('my.CAT1',{
+	extend: 'my.Sleep',
+	requires:'JS.util.Random',
 	constructor: function(color, age){
 		this.setColor(color);
 		this.setAge(age);
@@ -8,20 +10,18 @@ JS.define('my.CAT1',{
 		get$name: 'CAT1',
 		age: 0
 	},
-	eat: function(v){
-		alert(v)
-	},
 	statics: {
-    	TYPE:'1'
+    	Version: '1.0'
     },
-	extend: 'my.Sleep',
-	changingColor: function(oldValue, newValue){
-		alert('Fires on color changing:\noldValue is:'+oldValue+'\nnewValue is:'+newValue+'\ncurrentValue is:'+this.getColor());	
+    changingColor: function(oldValue, newValue){
+		JS.log('Color changing-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());	
 	},
 	changedColor: function(oldValue, newValue){
-		alert('Fires on color changed:\noldValue is:'+oldValue+'\nnewValue is:'+newValue+'\ncurrentValue is:'+this.getColor());					
+		JS.log('Color changed-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());					
 	},
 	applyColor: function(oldValue, newValue){
-		return confirm('Are you sure to change color from "' + oldValue + '" to "' + newValue + '"?')? newValue : oldValue;		
+		var R = this.ns('JS.util.Random'), rColor = R.randomColor();
+		JS.log('Color apply-> oldValue is:'+oldValue+' newValue is:'+newValue+' applyValue is a random:'+rColor);		
+		return rColor;		
 	}
 });

@@ -1,7 +1,7 @@
 /*!
  * @project JSDK <a target="_blank" href="http://jsdk2.sourceforge.net/website/index.html">JSDK</a>'s 
- * full name is JavaScript Development Kit, which is a full OO style JavaScript Framework. 
- * It has a small core file and many extension libraries, support such features: 
+ * is a JavaScript Framework, like JDK. Now it has a alias name is JTDK.
+ * JSDK have a small core and many extension libraries, support such features: 
  * ClassSystem, Reflect, AOP, Thread, JSUI, AWA, JSGF and Utils. 
  * 
  * @copyright Copyright(c) 2004-2012, Dragonfly.org. All rights reserved.
@@ -60,10 +60,27 @@
  */
 (function() {
 var OP = Object.prototype,
-	toString = OP.toString;
+	toString = OP.toString,
+	logTypes = {'undefined':1,'null':1,'string':1,'number':1,'boolean':1,'date':1,'array':1};
 
 JS = {
 	version: '1.0.0',
+	/**
+	 * Print the object on Console.
+	 * 
+	 * @method log
+	 * @param {Object} obj
+	 */
+	log: function(obj){
+		var s = (JS.typeOf(obj)) in logTypes?JS.stringify(obj):obj;
+		if(window.console) {
+			console.log(s);
+		}else if(window.opera) {
+			opera.postError(s);
+		}else {
+			window.statusbar = s;
+		}
+	},
 	/**
      * Returns true if the passed value is empty, false otherwise. The value is deemed to be empty if it is either:
      *
@@ -72,10 +89,10 @@ JS = {
      * - a zero-length array
      * - a zero-length string (Unless the `allowEmptyString` parameter is set to `true`)
      *
+     * @method isEmpty
      * @param {Object} value The value to test
      * @param {Boolean} allowEmptyString (optional) true to allow empty strings (defaults to false)
      * @return {Boolean}
-     * @markdown
      */
     isEmpty: function(value, allowEmptyString) {
         return (value === null) || (value === undefined) || (!allowEmptyString ? value === '' : false) || (this.isArray(value) && value.length === 0);
@@ -83,15 +100,17 @@ JS = {
     /**
      * Returns true if the passed value is a JavaScript Array, false otherwise.
      *
+     * @method isArray
      * @param {Object} target The target to test
      * @return {Boolean}
-     * @method
      */
     isArray: ('isArray' in Array) ? Array.isArray : function(value) {
     	return toString.call(value) === '[object Array]';
     },
     /**
      * Returns true if the passed value is a JavaScript Date object, false otherwise.
+     * 
+     * @method isDate
      * @param {Object} object The object to test
      * @return {Boolean}
      */
@@ -100,15 +119,18 @@ JS = {
     },
     /**
      * Returns true if the passed value is a JavaScript Object, false otherwise.
+     * 
+     * @method isObject
      * @param {Object} value The value to test
      * @return {Boolean}
-     * @method
      */
     isObject: function(value) {
         return value instanceof Object && value.constructor === Object;
     },
     /**
      * Returns true if the passed value is a JavaScript 'primitive', a string, number or boolean.
+     * 
+     * @method isPrimitive
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -118,9 +140,10 @@ JS = {
     },
     /**
      * Returns true if the passed value is a JavaScript Function, false otherwise.
+     * 
+     * @method isFunction
      * @param {Object} value The value to test
      * @return {Boolean}
-     * @method
      */
     isFunction:
     (typeof document !== 'undefined' && typeof document.getElementsByTagName('body') === 'function') ? function(value) {
@@ -130,6 +153,8 @@ JS = {
     },
     /**
      * Returns true if the passed value is a number. Returns false for non-finite numbers.
+     * 
+     * @method isNumber
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -138,6 +163,8 @@ JS = {
     },
     /**
      * Validates that a value is numeric.
+     * 
+     * @method isNumeric
      * @param {Object} value Examples: 1, '1', '2.34'
      * @return {Boolean} True if numeric, false otherwise
      */
@@ -146,6 +173,8 @@ JS = {
     },
     /**
      * Returns true if the passed value is a string.
+     * 
+     * @method isString
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -155,6 +184,7 @@ JS = {
     /**
      * Returns true if the passed value is a boolean.
      *
+     * @method isBoolean
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -163,6 +193,8 @@ JS = {
     },
     /**
      * Returns true if the passed value is an HTMLElement
+     * 
+     * @method isElement
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -171,6 +203,8 @@ JS = {
     },
     /**
      * Returns true if the passed value is a TextNode
+     * 
+     * @method isTextNode
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -179,6 +213,8 @@ JS = {
     },
     /**
      * Returns true if the passed value is defined.
+     * 
+     * @method isDefined
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -187,6 +223,8 @@ JS = {
     },
     /**
      * Returns true if the passed value is iterable, false otherwise
+     * 
+     * @method isIterable
      * @param {Object} value The value to test
      * @return {Boolean}
      */
@@ -195,6 +233,8 @@ JS = {
     },
     /**
      * Returns true if the property key is exist in the object, false otherwise
+     * 
+     * @method hasOwnProperty
      * @param {Object} o The object to test
      * @param {String} prop The property key
      * @return {Boolean}
@@ -206,20 +246,26 @@ JS = {
         return JS.isDefined(o[prop]) && 
                 o.constructor.prototype[prop] !== o[prop];
     },
+    ns: function(name, loader){
+    	var l = loader||JS.ClassLoader;
+		return l.ns(name);
+	},
     /**
      * @method setPath
      * @param {Object} kvs
+     * @param {JS.Loader} loader:optional
      */
-    setPath: function(kvs){
-    	JS.Loader.setPath(kvs);
+    setPath: function(kvs, loader){
+    	var l = loader||JS.ClassLoader;
+    	l.setPath(kvs);
 	},
     /**
 	 * @method define
 	 * @param {String} className
 	 * @param {Object} data
 	 */
-    define: function(className, data){
-    	JS.Loader.defineClass(className, data);
+    define: function(className, data){    	
+    	JS.ClassLoader.defineClass(className, data);
 	},
 	/**
 	 * @method create
@@ -228,7 +274,30 @@ JS = {
 	 * @return {Object}
 	 */
 	create: function(){
-		return JS.Loader.create.apply(JS.Loader, [].slice.call(arguments,0));
+		return JS.Loader.prototype.create.apply(JS.ClassLoader, arguments);
+	},
+	/**
+	 * @method factory
+	 * @param {Array} args
+	 * @param {String} className
+	 * @param {Object} instance:optional
+	 * @param {JS.Loader} loader:optional
+	 * @return {Object}
+	 */
+	factory: function(args, className, instance, loader){
+		var l = loader||JS.ClassLoader, clazz = l.findClass(className);
+		if(!clazz) throw new Error('Create the class:<'+className+'> failed.');
+		
+		var ctor = clazz.$class.getCtor(), obj = null;
+		if(instance) {
+			obj = instance;
+		}else{
+			var f = function(){};
+			f.prototype = ctor.prototype;
+			obj = new f();						
+		}		
+		ctor.apply(obj, args);
+		return obj;
 	}
 }
 
@@ -236,11 +305,11 @@ var _requireCallbacks = {};
 var _callback4Requires= function(name){
 	for(k in _requireCallbacks) {
 		if((k+',').indexOf(name+',')>=0){
-			var names = _requireCallbacks[k]['names'];
-			if(JS.Loader.hasClass(names)) {
+			var me = this, names = _requireCallbacks[k]['names'];
+			if(me.hasClass(names)) {
 				var	fns = _requireCallbacks[k]['fns'];
 				fns.forEach(function(fn){
-					fn.call();
+					fn.call(me);
 				});
 				delete _requireCallbacks[k];				
 				return;
@@ -254,13 +323,13 @@ var _callback4Requires= function(name){
  * @param {Function} onFinished
  * @param {ClassLoader} loader:optional
  */
-JS.require = function(classNames, onFinished){
+JS.require = function(classNames, onFinished, loader){
 	var names = Array.toArray(classNames);
 	if(JS.isEmpty(names)) return;
 	
-	var loader = JS.Loader;
-	if(loader.hasClass(names)){
-		if(JS.isFunction(onFinished)) onFinished.call();
+	var l = loader||JS.ClassLoader;
+	if(l.hasClass(names)){
+		if(JS.isFunction(onFinished)) onFinished.call(l);
 	}else{
 		var key = names.join(',');		
 		if(JS.isFunction(onFinished)){
@@ -273,8 +342,8 @@ JS.require = function(classNames, onFinished){
 			}
 		}
 		
-		loader.onEvent('classBuilded', _callback4Requires);
-		loader.loadClass(names);			
+		l.onEvent('classBuilded', _callback4Requires);
+		l.loadClass(names);			
 	}			
 }
 
@@ -306,6 +375,7 @@ var TYPES = {
 * - textnode
 * - whitespace
 * 
+* @method typeOf
 * @param {Object} o
 * @return {String}
 */
@@ -332,6 +402,8 @@ var _hasEnumBug = !{valueOf: 0}.propertyIsEnumerable('valueOf');
 var _enumerables = ['hasOwnProperty', 'valueOf', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString'];
 /**
  * Copies all the properties of supplier to receiver.
+ * 
+ * @method mix
  * @param {Object} receiver The object to receive the mixed properties.
  * @param {Object} supplier The object supplying the properties to be mixed.
  * @param {Boolean} unoverwrite If `true`, properties that is not exist 

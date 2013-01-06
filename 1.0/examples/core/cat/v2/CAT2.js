@@ -5,7 +5,7 @@ JS.define('my.CAT2',{
 		return this.color;
 	},
 	statics: {
-    	Version:'1.0'
+		Version: '2.0'
     },
     mixins:['my.Sleep']
 });

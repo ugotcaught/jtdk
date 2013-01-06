@@ -18,47 +18,26 @@
 <script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
 
-
-
 <script>
 JS.setPath({
 	'JS': '../../source',
-	'my': 'cat/v1',
 	'test': '.'
 });
 
-var objectClass = JS.Object.$class;
-console.log(objectClass.getName());
-console.log(objectClass.getCtor());
-console.log(objectClass.getSuperName());
-console.log(objectClass.getSuperClass());
-
-function test1(){
-	JS.require(['JS.util.Random','my.CAT1'], function(){
-		var cat = JS.create('my.CAT1', 'white', 10);
-				
-		console.log(my);
-		console.log(my.CAT1.$class.getName()=='my.CAT1');
-		console.log(cat.getClass().getSuperClass().getSuperClass()===JS.Object.$class)
-		console.log(cat.sleep());
-	})	
-}
-
-function test2(){
-	JS.require('my.CAT2', function(){
-		console.log(JS.Object===JS.Class.forName('my.CAT2').getSuperClass().getCtor());
-		console.log(my.CAT2);
-	})	
-}
-
-function test3(){
+var objectClass = JS.ns('JS.Object').$class;
+JS.log(objectClass.getName());
+JS.log(objectClass.getCtor());
+JS.log(objectClass.getSuperName());
+JS.log(objectClass.getSuperClass());
+	
+function test(){
 	JS.require(['test.cc.C5','test.cc.C6'], function(){
-		console.log(test.cc);
-		console.log(JS.Class.getClasses());
+		JS.log(this.ns('test.cc'));
+		JS.log(JS.ClassLoader.getClasses());
 		
 		for(var i=1;i<7;i++){
-			var c = JS.create('test.cc.C'+i);
-			console.log(c.$className+'\'s <method> is '+c.method());
+			var c = this.create('test.cc.C'+i);
+			JS.log(c.getClass().getName()+'\'s <method> is '+c.method());
 		}		
 	})	
 }
@@ -67,8 +46,6 @@ function test3(){
 </head>
 
 <body>
-<button onclick="test1();">test1</button>
-<button onclick="test2();">test2</button>
-<button onclick="test3();">test3</button>
+<button onclick="test();">test</button>
 </body>
 </html>

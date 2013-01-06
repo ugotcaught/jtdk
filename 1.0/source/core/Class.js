@@ -13,24 +13,6 @@
  * @requires /core/JS-base.js
  */
 (function() {
-var ns = function(pkg, namespace) {
-	if(!pkg) return namespace||window;
-	
-	var win = namespace||window
-		,p = pkg.split('.')
-    	,len = p.length
-    	,p0 = p[0];
-	if(typeof win[p0]=="undefined") win[p0] = {};
-	
-	var b = win[p0];
-    for (var i=1; i<len; i++) {
-		var pi = p[i]; if(!pi) break;	             
-		b[pi] = b[pi]||{};
-		b = b[pi];
-    }
-    return b;
-}	
-	
 /**
  * Only JSDK can creates Class objects.
  * @class JS.Class
@@ -39,13 +21,19 @@ var ns = function(pkg, namespace) {
  * @param {String} className
  * @throws {Error} when not found the class 
  */
-JS.Class = function(classInfo){
+JS.Class = function(classInfo, loader){
 	if(!classInfo['extend'] && classInfo['className']!='JS.Object'){
 		classInfo['extend'] = 'JS.Object';
 	}
 	
-	this._classInfo = classInfo;
-	this._ctor = ns(this._classInfo['packageName'])[this._classInfo['simpleName']];
+	this._info = classInfo;
+	this._loader = loader;
+	
+	if(classInfo['className']=='JS.Object'){
+		var pkg = loader.ns(this._info['packageName']);
+		pkg[this._info['simpleName']] = JS.Object;
+	}
+	this._ctor = loader.ns(this._info['packageName'])[this._info['simpleName']];
 	
 	if(!this._ctor) throw new Error('Not found the class:<'+className+'> by loader.');
 	this._ctor.$class = this;
@@ -58,13 +46,22 @@ JS.Class = function(classInfo){
 
 JS.mix(JS.Class.prototype, {
 	/**
+	 * Returns the class's loader.
+	 * 
+	 * @method getLoader
+	 * @return {JS.Loader} 
+	 */
+	getLoader: function(){
+		return this._loader;
+	},
+	/**
 	 * Returns the class full name.
 	 * 
 	 * @method getName
 	 * @return {String} full name
 	 */
 	getName: function(){
-		return this._classInfo['className']
+		return this._info['className']
 	},
 	/**
 	 * Returns the class's package name.
@@ -73,7 +70,7 @@ JS.mix(JS.Class.prototype, {
 	 * @return {String} package name
 	 */
 	getPackageName: function(){
-		return this._classInfo['packageName']
+		return this._info['packageName']
 	},
 	/**
 	 * Returns the class's short name.
@@ -82,7 +79,7 @@ JS.mix(JS.Class.prototype, {
 	 * @return {String} short name
 	 */
 	getSimpleName: function(){
-		return this._classInfo['simpleName']
+		return this._info['simpleName']
 	},
 	/**
 	 * Returns the super class's full name.
@@ -91,10 +88,10 @@ JS.mix(JS.Class.prototype, {
 	 * @return {String} super class name
 	 */
 	getSuperName: function(){
-		return this._classInfo['extend']
+		return this._info['extend']
 	},
 	/**
-	 * Returns True if the class is singleton.
+	 * Returns True if the class is singleton, false otherwise.
 	 * 
 	 * @method isSingleton
 	 * @return {Boolean} 
@@ -118,7 +115,7 @@ JS.mix(JS.Class.prototype, {
 	 * @return {JS.Class}
 	 */
 	getSuperClass: function(){
-		return JS.Loader.getClass(this.getSuperName());
+		return this._loader.findClass(this.getSuperName());
 	},
 	/**
 	 * Returns a new instance of the class.
@@ -135,7 +132,7 @@ JS.mix(JS.Class.prototype, {
 		return obj;
 	},
 	/**
-	 * Returns True if two classes's name and loader are equals.
+	 * Returns True if two classes's name and loader are equals, false otherwise.
 	 * 
 	 * @method equals
 	 * @param {JS.Class} clazz
@@ -212,20 +209,25 @@ JS.mix(JS.Class, {
 	 * @method forName
 	 * @static
 	 * @param {String} className
+	 * @param {JS.Loader} loader:optional
 	 * @return {JS.Class}
 	 */
-	forName: function(className){
-		return JS.Loader.getClass(className);
+	forName: function(className, loader){
+		var l = loader||JS.ClassLoader;
+		return l.findClass(className);
 	},
 	/**
-	 * Returns all classes by JSDK.
+	 * Returns true if the test object is a class, false otherwise.
 	 * 
-	 * @method getClasses
+	 * @method isClass
 	 * @static
-	 * @return {JS.Class[]}
+	 * @param {String|Object} clazz
+	 * @param {JS.Loader} loader:optional
+	 * @return {Boolean}
 	 */
-	getClasses: function(){
-		return JS.Loader.getClasses();
+	isClass: function(clazz, loader){
+		if(JS.isString(clazz)) return this.forName(clazz,loader)?true:false;		
+		return JS.hasOwnProperty(clazz, '$class');
 	}
 });
 
@@ -345,7 +347,7 @@ JS.ClassBuilder = {
 	},
 	_mixs: function(classp, mixs, loader){
 		for ( var i = 0; i < mixs.length; i++) {
-			var ctor = loader.getClass(mixs[i]).getCtor();			
+			var ctor = loader.findClass(mixs[i]).getCtor();			
 			JS.mix(classp.prototype, ctor.prototype);
 		}
 	},
@@ -360,7 +362,7 @@ JS.ClassBuilder = {
 		return this._build(classInfo, data, loader);
 	},
 	_build: function(classInfo, data, loader){
-		var pkg = ns(classInfo.packageName),
+		var pkg = loader.ns(classInfo.packageName),
 			sname = classInfo.simpleName,
 		    fname = classInfo.className;
 		
@@ -374,12 +376,13 @@ JS.ClassBuilder = {
 		
 		var subc = null;
 		if(singleton){
-			pkg[sname] = {				
+			pkg[sname] = {
+				superclass: JS.Object.prototype	
 			};
 			subc = pkg[sname];
+			JS.mix(subc, JS.Object.prototype);			
 			JS.mix(subc, statics);
 			JS.mix(subc, data);
-			JS.mix(subc, JS.Object.prototype);			
 		}else{
 			var me = this;
 			pkg[sname] = function(){
@@ -391,7 +394,7 @@ JS.ClassBuilder = {
 			subc = pkg[sname];
 			this._handleFields(subc, fields, data);
 			
-			var superCtor = loader.getClass(extend).getCtor();			
+			var superCtor = loader.findClass(extend).getCtor();			
 			this._extend(subc, superCtor);
 			this._mixs(subc, mixins, loader);
 			this._overrides(subc, data, statics);
