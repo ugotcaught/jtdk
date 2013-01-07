@@ -7,11 +7,17 @@
 
 
 ##类的定义
-1.类名应该定义为：projectName.[packageName.]SimpleName
+1.每个类名应该定义为：
+```html
+projectName.[packageName.]SimpleName
+```
 
-2.类应该保存为一个唯一的文件：projectDir/[packgeName/]SimpleName.js
+2.每一个类应该保存为一个唯一的文件：
+```html
+projectDir/[packgeName/]SimpleName.js
+```
 
-3.类应该使用如下代码来定义：
+3.每个类应该使用如下代码来定义：
 
 ```javascript
     JS.define("projectName.[{packageName.]SimpleName", {
