@@ -1,4 +1,4 @@
-## Javascript Class Specification 
+# Javascript Class Specification 
 >version: 1.0
 
 >author: Feng.Chun
@@ -6,7 +6,7 @@
 >update: 2013-1-7
 
 
-###类的定义
+##类的定义
 1.类名应该定义为：projectName.[packageName.]SimpleName
 
 2.类应该保存为一个唯一的文件：projectDir/[packgeName/]SimpleName.js
@@ -15,13 +15,13 @@
 
 ```javascript
     JS.define("projectName.[{packageName.]SimpleName", {
-    	requires: [..],
-	    extend: [..],
-	    mixins: [..],
+    	    requires: [..], //need load classes before definition
+	    extend: "", //only inherit one class
+	    mixins: [..], //allow inherit many classes's prototypes 
 	    constructor: function(){
-	  		..
+	  		...
 	    },
-	    fields: {..},
+	    fields: {..}, //auto generate getter and setter methods
 	    statics: {..},
 	    "unknown_method": function(){..}
     })
@@ -30,7 +30,7 @@
 4.JS.Object是所有类的根父类
 
   
-###类的加载
+##类的加载
 类文件可以直接同步方式加载，类文件还可以使用如下代码异步加载：
 
 ```javascript
@@ -43,9 +43,9 @@
     });
 ```
 
-当未指名类加载器，JS框架使用一个缺省的类加载器(JS.ClassLoader)异步加载所有类。
+当未指名类加载器，JS框架应使用一个缺省的类加载器(JS.ClassLoader)异步加载所有类。
 
-也可以自定义一个类加载加载某个package，如下：
+也允许自定义一个类加载加载某个package，如下：
    
 ```javascript
     var loader = new JS.Loader({id:'loaderID',paths:{"projectName": "/projectDir"}});
@@ -63,9 +63,25 @@
 	var loader = JS.Loader.getLoader("loaderID");
 ```
 
+###多版本类库的加载
+JS框架应使用多ClassLoader机制来解决类库的多版本同时加载与使用的问题。
+先定义两个Loader，分别加载"test"类库的两个版本：
 
-###类实例的创建
-使用以下方式创建一个类实例，前提是类文件已经加载：
+```javascript
+var loader1 = new JS.Loader({id:'loader1',paths:{'test': '/v1/source'}});
+var loader2 = new JS.Loader({id:'loader2',paths:{'test': '/v2/source'}});
+
+	JS.require(['test.CAT'], function(){
+		var cat = this.create('test.CAT', ...);		
+	}, loader1);
+	
+	JS.require(['test.CAT'], function(){
+		var cat = this.create('test.CAT', ...);
+	}, loader2);
+```
+
+##类实例的创建
+使用以下方式创建一个类实例，前提是类文件已经加载。
 
 同步加载时
 
@@ -81,7 +97,7 @@
     });
 ```
 
-###类对象的引用
+##类对象的引用
 同步加载时
 
 ```javascript
@@ -95,7 +111,7 @@
     });
 ```
 
-###类的反射
+##类的反射
 各种方法获取其JS.Class类对象：
 ```javascript
     var clazz = JS.Class.forName("projectName.[packageName.]SimpleName"); //从类名获取其Class对象
