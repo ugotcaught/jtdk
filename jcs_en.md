@@ -20,7 +20,7 @@ projectDir/[packgeName/]SimpleName.js
 3.Each class SHOULD use the following code to define:
 
 ```javascript
-    JS.define("projectName.[{packageName.]SimpleName", {
+    JS.define("projectName.[packageName.]SimpleName", {
     	    requires: [..], //need load classes before definition
 	    extend: "", //only inherit one class
 	    mixins: [..], //allow inherit many classes's prototypes 
