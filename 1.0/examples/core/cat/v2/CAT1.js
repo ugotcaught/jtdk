@@ -3,12 +3,13 @@ JS.define('my.CAT1',{
 	requires:'JS.util.Random',
 	constructor: function(color, age){
 		this.setColor(color);
-		this.setAge(age);
+		this.age = age;
 	},
-	fields: {
+	age: 0,
+	getAge: function(){return this.age;},
+	config: {
 		color: 'unknown',
-		get$name: 'CAT1',
-		age: 0
+		name: 'CAT1'
 	},
 	statics: {
     	Version: '2.0'

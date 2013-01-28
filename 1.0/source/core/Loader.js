@@ -155,7 +155,6 @@ JS.Loader.prototype = {
 			data = d['data'];
 		
 		if(JS.ClassBuilder.build(info, data, this)){	
-			this.newClass(info);
 			this.fireEvent('classBuilded', info['className']);
 			
 			delete this._definedClasses[name];

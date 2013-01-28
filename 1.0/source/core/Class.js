@@ -41,7 +41,7 @@ JS.Class = function(classInfo, loader){
 	var me = this, o = this._ctor.prototype?this._ctor.prototype:this._ctor;
 	o.getClass = function(){
 		return me;
-	}	
+	}
 };
 
 JS.mix(JS.Class.prototype, {
@@ -142,63 +142,169 @@ JS.mix(JS.Class.prototype, {
 		return clazz && this.getName()===clazz.getName();
 	},
 	/**
-	 * Returns the classe's all fields.
+	 * Returns the classe's all statics properties.
 	 * 
-	 * @method getFieldNames
-	 * @return {Array<String>}
-	 */
-	getFieldNames: function(){
-		var arr = [], fields = this._ctor['_fields'];
-		for(var k in fields){
-			arr.push(k);
-		}
-		return arr;
-	},
-	/**
-	 * Returns the classe's all methods, exclude constructor.
-	 * 
-	 * @method getMethodNames
-	 * @return {Array<String>}
-	 */
-	getMethodNames: function(){
-		var arr = [], methods = this._ctor['prototype'];
-		for(var k in methods){
-			if(k!='constructor') arr.push(k);
-		}
-		return arr;
-	},
-	/**
-	 * Reflective invoke a field's value.
-	 * 
-	 * @method getFieldValue
-	 * @param {Object} obj the class instance
-	 * @param {String} fieldName the field name
+	 * @method getStatics
 	 * @return {Object}
 	 */
-	getFieldValue: function(obj, fieldName){
-		return obj['_'+fieldName];
+	getStatics: function(){
+		var ctor = this._ctor,
+		    statics = undefined;
+		
+		JS.forIn(ctor, function(k){
+			if(!statics) statics = {};
+			statics[k] = ctor[k];
+		})
+		
+		return statics;
 	},
 	/**
-	 * Reflective invoke a field's value.
+	 * Returns the classe's all methods, exclude constructor, include static methods.
 	 * 
-	 * @method setFieldValue
+	 * @method getMethods
+	 * @return {Object}
+	 */
+	getMethods: function(){
+		var members = {};
+	
+		JS.forIn(this._ctor, function(k){
+			if(JS.isFunction(this[k])) members[k] = this[k];
+		})		
+		if(this.isSingleton()) return members;		
+		 
+		JS.forIn(this._ctor.prototype, function(k){
+			if(k!='constructor' && JS.isFunction(this[k])) members[k] = this[k];
+		})
+		return members;
+	},
+	/**
+	 * Returns the method by the name.
+	 * 
+	 * @method getMethod
+	 * @param {String} name the method name
+	 * @return {Function}
+	 */
+	getMethod: function(name){
+		var mds = this.getMethods();
+		return mds?mds[name]:undefined;
+	},
+	/**
+	 * Returns all fields, include static fields.
+	 * 
+	 * @method getFields
+	 * @param {Object} obj:optional the class instance
+	 * @return {Object}
+	 */
+	getFields: function(obj){
+		var members = {};
+		
+		JS.forIn(this._ctor, function(k){
+			if(!JS.isFunction(this[k])) members[k] = this[k];
+		})		
+		if(this.isSingleton()) return members;		
+		 
+		JS.forIn(obj, function(k){
+			if(!JS.isFunction(this[k])) members[k] = this[k];
+		})
+		return members;
+	},
+	/**
+	 * Returns a field by name, exclude statics and config.
+	 * 
+	 * @method getField
+	 * @param {Object} obj the class instance.If this field is static, pass a NULL
+	 * @param {String} name:optional the field name
+	 * @return {Object}
+	 */
+	getField: function(obj, name){
+		var fs = this.getFields(obj);
+		return fs?fs[name]:undefined;
+	},
+	/**
+	 * Returns the classe's a config property.
+	 * 
+	 * @method getConfigProperty
 	 * @param {Object} obj the class instance
+	 * @param {String} name:optional the property name
+	 * @return {Object}
+	 */
+	getConfigProperty: function(obj, name){
+		if(this.isSingleton()) return undefined;
+			
+		var config = this._info['config'];
+		if(config && name && JS.hasOwnProperty(config,name)) return {defaultValue: config[name], value: obj[name]};		
+		return undefined;
+	},
+	/**
+	 * Returns the classe's all config properties.
+	 * 
+	 * @method getConfigs
+	 * @param {Object} obj:optional the class instance
+	 * @return {Object}
+	 */
+	getConfigs: function(obj){
+		if(this.isSingleton()) return undefined;
+			
+		var config = this._info['config'],
+			rst = undefined;
+		if(config){
+			rst = {};
+			for(var k in config){
+				rst[k] = {
+					defaultValue: config[k],
+					value: obj?obj[k]:null	
+				}
+			}
+		}
+		
+		return rst;
+	},
+	/**
+	 * Set a new value to a field.
+	 * 
+	 * @method setConfigValue
+	 * @param {Object} obj the class instance.If this field is static, pass a NULL
 	 * @param {String} fieldName the field name
 	 * @param {Object} newValue the field name
+	 * @throws {Error} If update a static field, then throw a Error.
 	 */
-	setFieldValue: function(obj, fieldName, newValue){
-		return obj['set'+(fieldName.substring(0,1).toUpperCase()+fieldName.slice(1))](newValue);
+	setField: function(obj, name, newValue){
+		var field = this.getField(obj, name);
+		if(!field) throw new Error('This field named "'+name+'" is not exist!');
+		if(field.isStatic){
+			throw new Error('Update a static field value is not allowed!');
+		}else{
+			obj[name] = newValue;
+		}
+	},
+	/**
+	 * Set a new value to a config property.
+	 * 
+	 * @method setConfigProperty
+	 * @param {Object} obj the class instance
+	 * @param {String} fieldName the property name
+	 * @param {Object} newValue the field name
+	 */
+	setConfigProperty: function(obj, name, newValue){
+		if(this.isSingleton()) throw new Error('This is a singleton class without config!');
+		var fn = obj['set'+(name.substring(0,1).toUpperCase()+name.slice(1))];
+		if(!fn) throw new Error('This class has not a config property named "'+name+'".');	
+		fn.call(obj, newValue);
 	},
 	/**
 	 * Reflective invoke a method.
 	 * 
 	 * @method invokeMethod
-	 * @param {Object} obj the class instance
+	 * @param {Object} obj the class instance.If this method is static, pass a NULL
 	 * @param {String} methodName the field name
 	 * @param {Object..} args arguments for the method
 	 */
 	invokeMethod: function(obj, methodName, args){
-		return obj[methodName].apply(obj, [].slice.call(arguments, 2));
+		var md = this.getMethod(methodName);
+		if(!md) throw new Error('This class has not a method named "'+methodName+'".');
+		
+		var sts = this.getStatics(), isStatic = sts && sts[methodName]?true:false;
+		return md.apply(isStatic?this._ctor:obj, [].slice.call(arguments, 2));
 	}	
 });
 
@@ -217,7 +323,7 @@ JS.mix(JS.Class, {
 		return l.findClass(className);
 	},
 	/**
-	 * Returns true if the test object is a class, false otherwise.
+	 * Returns true if the test object is a jsdk class, false otherwise.
 	 * 
 	 * @method isClass
 	 * @static
@@ -228,6 +334,27 @@ JS.mix(JS.Class, {
 	isClass: function(clazz, loader){
 		if(JS.isString(clazz)) return this.forName(clazz,loader)?true:false;		
 		return JS.hasOwnProperty(clazz, '$class');
+	},
+	/**
+	 * Returns true if the test object is a instance of the class, false otherwise.
+	 * 
+	 * @method isInstanceOf
+	 * @static
+	 * @param {Object} obj
+	 * @param {String|JS.Class} clazz
+	 * @param {JS.Loader} loader:optional
+	 * @return {Boolean}
+	 */
+	isInstanceOf: function(obj, clazz, loader){
+		if(!obj || !clazz) return false;
+		
+		var cls = clazz;
+		if(JS.isString(clazz)){
+			var clsCtor = JS.ns(clazz, loader);
+			cls = clsCtor?clsCtor.$class:null;
+		}
+		
+		return obj.getClass()===cls;
 	}
 });
 
@@ -242,74 +369,71 @@ JS.ClassBuilder = {
             superc.prototype.constructor = superc;
         }
 	},
-	_overrides: function(subc, overrides, statics){
-		// add prototype overrides
-	    if (overrides) {
-	    	JS.mix(subc.prototype, overrides);
-	    }
-
-	    // add static overrides
-	    if (statics) {
-	        JS.mix(subc, statics);
-	    }
-	},
-	_catchData: function(data, key, defaultValue){
-		var v = data[key];
-		if(JS.isEmpty(v)) v = defaultValue;
+	_prehandleData: function(data){
+		var rst = {
+				'requires':[],
+				'constructor':function(){},
+				'extend':'JS.Object',
+				'singleton':false,
+				'statics':{},
+				'mixins':[],
+				'methods':{},
+				'fields':{},
+				'config':{}
+				};
 		
-		if(key in data) {
-			delete data[key];
+		for(key in data) {
+			if(key=='requires'){
+				rst[key] = Array.toArray(data[key])||[];
+			}else if(key=='constructor'){
+				rst[key] = data[key]||function(){};
+			}else if(key=='extend'){
+				rst[key] = data[key]||'JS.Object';
+			}else if(key=='singleton'){
+				rst[key] = data[key]||false;
+			}else if(key=='statics'){
+				rst[key] = data[key]||{};
+			}else if(key=='mixins'){
+				rst[key] = Array.toArray(data[key])||[];
+			}else if(key=='config'){
+				rst[key] = data[key]||{};
+			}else if(JS.isFunction(data[key])){
+				rst['methods'][key] = data[key];
+			}else{
+				rst['fields'][key] = data[key];
+			}	
 		}
-		return v;
+		
+		if(rst['singleton']){
+			rst['statics'] = JS.mix(rst['statics'], rst['methods']);
+			rst['statics'] = JS.mix(rst['statics'], rst['fields']);			
+		}else{
+			var config = rst['config'], configMethods = {};
+			if(config){
+				for(var k in config){
+					var uName = this._upper(k);					
+					configMethods['get'+uName] = this._getterFn(k);
+					configMethods['set'+uName] = this._setterFn(k);
+				}
+			}		
+			
+			//mix all methods
+			rst['methods'] = JS.mix(configMethods, rst['methods']);
+		}
+		
+		return rst;
 	},
 	_upper: function(str){
 		return str.substring(0,1).toUpperCase()+str.slice(1);
 	},
-	_getRealFieldName: function(fname){
-		if(fname.startsWith('get$') || fname.startsWith('set$')) return fname.length>4?fname.slice(4):null;
-		return fname;
-	},
-	_genConstructorFields: function(thisp, fields){
+	_initFields: function(fields, thisp){
 		for(var k in fields){
-			var realFName = this._getRealFieldName(k);
-			if(!realFName) continue;
-			thisp['_'+realFName] = fields[k];
+			thisp[k] = fields[k];
 		}
 	},
-	_handleField: function(classSelf, fname, defaultValue, data){
-		var changing = this._catchData(data,'changing'+this._upper(fname),null), 
-			changed = this._catchData(data,'changed'+this._upper(fname),null), 
-			apply = this._catchData(data,'apply'+this._upper(fname),null); 
-			
-		if(!classSelf['_fields']) classSelf['_fields'] = {};
-		var ofs = {defaultValue: defaultValue};
-		if(changing) ofs['changing'] = changing;
-		if(changed) ofs['changed'] = changed;
-		if(apply) ofs['apply'] = apply;
-		classSelf['_fields'][fname] = ofs;
-	},
-	_handleFields: function(classSelf, fields, data){
-		for(var k in fields){
-			var realFName = this._getRealFieldName(k);
-			if(!realFName) continue;
-			this._handleField(classSelf, realFName, fields[k], data);
-		}
-	},
-	_genMethods4Fields: function(classSelf, fields){
-		var classp = classSelf.prototype;
-		for(var k in fields){
-			if(k.startsWith('get$')){
-				k = k.length>4?k.slice(4):null;
-				if(!k) continue;
-				classp['get'+this._upper(k)] = this._getterFn(k);				
-			}else if(k.startsWith('set$')){
-				k = k.length>4?k.slice(4):null;
-				if(!k) continue;
-				classp['set'+this._upper(k)] = this._setterFn(k, classSelf);	
-			}else {
-				classp['get'+this._upper(k)] = this._getterFn(k);
-				classp['set'+this._upper(k)] = this._setterFn(k, classSelf);
-			}
+	_initConfigFields: function(config, thisp){
+		for(var k in config){
+			thisp['_'+k] = config[k];
 		}
 	},
 	_getterFn: function(key){
@@ -317,33 +441,32 @@ JS.ClassBuilder = {
 			return this['_'+key];
 		}
 	},
-	_setterFn: function(key, classSelf){
+	_setterFn: function(key){
 		var me = this;
 		
-		return function(newv){
-			var oldv = this['_'+key],
-				isChanged = oldv!==newv,
-				onfield = classSelf['_fields'][key];
+		return function(newV){			
+			var methods = this.getClass().getMethods(),
+				oldV = this['_'+key],
+				isChanged = oldV===newV?false:true,
+				upperKey = me._upper(key),		
+				changingFn = methods['changing'+upperKey],
+				changedFn = methods['changed'+upperKey],
+				applyFn = methods['apply'+upperKey];
 			
-			if(isChanged){
-				me._fireOnField(onfield, 'changing', oldv, newv, this);				
+			if(isChanged && changingFn){
+				changingFn.call(this, newV, oldV);
 			}			
 			
-			var onApplyFn = onfield['apply'];
-			if(onApplyFn){
-				this['_'+key] = onApplyFn.call(this, oldv, newv);
+			if(applyFn){
+				this['_'+key] = applyFn.call(this, newV, oldV);
 			}else{
-				this['_'+key] = newv;
+				this['_'+key] = newV;
 			}			
 			
-			if(isChanged){
-				me._fireOnField(onfield, 'changed', oldv, this['_'+key], this);				
-			}
+			if(isChanged && changedFn){
+				changedFn.call(this, this['_'+key], oldV);
+			}	
 		}
-	},
-	_fireOnField: function(onfield, ename, oldV, newV, thisp){
-		var fn = onfield[ename];
-		if(fn) fn.call(thisp, oldV, newV);
 	},
 	_mixs: function(classp, mixs, loader){
 		for ( var i = 0; i < mixs.length; i++) {
@@ -364,42 +487,40 @@ JS.ClassBuilder = {
 	_build: function(classInfo, data, loader){
 		var pkg = loader.ns(classInfo.packageName),
 			sname = classInfo.simpleName,
-		    fname = classInfo.className;
+		    fname = classInfo.className,
+		    rst = this._prehandleData(data);
 		
-		var conFn = this._catchData(data,'constructor',function(){}), 
-			extend = this._catchData(data,'extend','JS.Object'),
-			singleton = this._catchData(data,'singleton',false),
-			statics = this._catchData(data,'statics'),
-			fields = this._catchData(data,'fields',{}),
-			mixins = Array.toArray(this._catchData(data,'mixins',[]));
-		delete data['requires'];
-		
-		var subc = null;
-		if(singleton){
+		var subc = null, superCtor = loader.findClass(rst['extend']).getCtor();
+		if(rst['singleton']){
 			pkg[sname] = {
 				superclass: JS.Object.prototype	
 			};
 			subc = pkg[sname];
 			JS.mix(subc, JS.Object.prototype);			
-			JS.mix(subc, statics);
-			JS.mix(subc, data);
+			// add statics
+		    JS.mix(subc, rst['statics']);			
 		}else{
 			var me = this;
 			pkg[sname] = function(){
 				pkg[sname].superclass.constructor.apply(this, arguments);				
 				
-				me._genConstructorFields(this, fields);
-				conFn.apply(this, arguments);				
+				me._initFields(rst['fields'], this);
+				me._initConfigFields(rst['config'], this);
+				rst['constructor'].apply(this, arguments);				
 			}
 			subc = pkg[sname];
-			this._handleFields(subc, fields, data);
 			
-			var superCtor = loader.findClass(extend).getCtor();			
 			this._extend(subc, superCtor);
-			this._mixs(subc, mixins, loader);
-			this._overrides(subc, data, statics);
-			this._genMethods4Fields(subc, fields);			
+			this._mixs(subc, rst['mixins'], loader);
+			// add methods
+		    JS.mix(subc.prototype, rst['methods']);
+		    // add statics
+		    JS.mix(subc, rst['statics']);		    
 		}
+		//new class
+		classInfo['config'] = rst['config'];
+		loader.newClass(classInfo);
+		
 		return true;
 	}
 }

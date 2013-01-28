@@ -27,18 +27,30 @@ JS.setPath({
 
 function test1(){
 	JS.require('my.CAT1', function(){
-		console.log(my.CAT1.$class.getFieldNames());
-		console.log(my.CAT1.$class.getMethodNames());
+		JS.log(JS.Object.$class.getStatics());
+		JS.log(JS.Object.$class.getMethods());
+		JS.log(JS.Object.$class.getFields());
+		JS.log(JS.Object.$class.getConfigs());
+				
+		var my = this.ns('my');
+		JS.log(my.CAT1.$class.getStatics());
+		JS.log(my.CAT1.$class.getMethods());
+		JS.log(my.CAT1.$class.getFields());
+		JS.log(my.CAT1.$class.getConfigs());
 		
 		var catClass = JS.Class.forName('my.CAT1');
 		var cat = catClass.newInstance('white', 5);
 		
-		console.log(catClass.getFieldValue(cat, 'color'));
-		catClass.setFieldValue(cat, 'color', 'black');
-		console.log(catClass.getFieldValue(cat, 'color'));
+		JS.log(catClass.getConfigProperty(cat, 'color'));
+		catClass.setConfigProperty(cat, 'color', 'black');
+		JS.log(catClass.getConfigProperty(cat, 'color'));
 		
-		catClass.invokeMethod(cat, 'setAge', 100);
-		console.log(catClass.invokeMethod(cat, 'getAge'));		
+		JS.log(catClass.getField(cat, 'age'));
+		catClass.setField(cat, 'age', '10');
+		JS.log(catClass.getField(cat, 'age'));
+		
+		catClass.invokeMethod(cat, 'setName', 'YOMI');
+		JS.log(catClass.invokeMethod(cat, 'getName'));		
 	})	
 }
 

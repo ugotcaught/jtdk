@@ -14,6 +14,7 @@
  * @date 2012-11-21
  * @date 2012-12-20
  * @date 2013-01-04
+ * @date 2013-01-28
  * 
  * @version 0.6.2
  * @author feng.chun
@@ -232,7 +233,7 @@ JS = {
         return (value && typeof value !== 'string') ? value.length !== undefined : false;
     },
     /**
-     * Returns true if the property key is exist in the object, false otherwise
+     * Returns true if the property key is exist in the object, false otherwise.
      * 
      * @method hasOwnProperty
      * @param {Object} o The object to test
@@ -246,11 +247,21 @@ JS = {
         return JS.isDefined(o[prop]) && 
                 o.constructor.prototype[prop] !== o[prop];
     },
+    /**
+     * Returns the object of a namespace.
+     * 
+     * @method ns
+     * @param name
+     * @param loader
+     * @return {Object}
+     */
     ns: function(name, loader){
     	var l = loader||JS.ClassLoader;
 		return l.ns(name);
 	},
     /**
+     * Set class path for a loader. The default loader is "JS.ClassLoader".
+     * 
      * @method setPath
      * @param {Object} kvs
      * @param {JS.Loader} loader:optional
@@ -260,6 +271,8 @@ JS = {
     	l.setPath(kvs);
 	},
     /**
+     * Define a class.
+     * 
 	 * @method define
 	 * @param {String} className
 	 * @param {Object} data
@@ -268,6 +281,8 @@ JS = {
     	JS.ClassLoader.defineClass(className, data);
 	},
 	/**
+	 * Create a instance of a class.
+	 * 
 	 * @method create
 	 * @param {String} className
 	 * @param {Object..} arguments[1..n]
@@ -277,6 +292,8 @@ JS = {
 		return JS.Loader.prototype.create.apply(JS.ClassLoader, arguments);
 	},
 	/**
+	 * 
+	 * 
 	 * @method factory
 	 * @param {Array} args
 	 * @param {String} className
@@ -401,36 +418,47 @@ JS.typeOf = function(o) {
 var _hasEnumBug = !{valueOf: 0}.propertyIsEnumerable('valueOf');
 var _enumerables = ['hasOwnProperty', 'valueOf', 'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString', 'toString'];
 /**
+ * For each property of a object.
+ * 
+ * @method forIn
+ * @param {Object} object 
+ * @param {Object} fn 
+ * @param {Object} thisp
+ */
+JS.forIn = function(object, fn, thisp){
+	if(object){
+		for (var p in object) {
+            fn.call(thisp||object, p, object);
+        }
+		if(_hasEnumBug) {//for IE bug
+			for (var j = _enumerables.length; j--;) {
+                var k = _enumerables[j];
+                if (object.hasOwnProperty(k)) {
+                	fn.call(thisp||object, k, object);
+                }
+            }
+        }   
+	}
+}
+
+/**
  * Copies all the properties of supplier to receiver.
  * 
  * @method mix
  * @param {Object} receiver The object to receive the mixed properties.
  * @param {Object} supplier The object supplying the properties to be mixed.
  * @param {Boolean} unoverwrite If `true`, properties that is not exist 
- * on the receiver will be overwritten with properties from the supplier.
+ * on the receiver will not be overwritten.
  * @return {Object} returns obj
  */
 JS.mix = function(receiver, supplier, unoverwrite) {
-    if (supplier) {
-        for (var property in supplier) {
-            if (!unoverwrite) {
-            	receiver[property] = supplier[property];
-            }else if(receiver[property] === undefined){
-            	receiver[property] = supplier[property];
-            }
+	JS.forIn(supplier, function(property){
+		if (!unoverwrite) {
+        	receiver[property] = this[property];
+        }else if(receiver[property] === undefined){
+        	receiver[property] = this[property];
         }
-        
-        //IE doesn't enumerate in for..in loops, it's necessary to manually enumerate these properties.
-        if(_hasEnumBug) {
-        	for (var j = _enumerables.length; j--;) {
-                var k = _enumerables[j];
-                if (supplier.hasOwnProperty(k)) {
-                	receiver[k] = supplier[k];
-                }
-            }
-        }        
-    }
-
+	})
     return receiver;
 }
 

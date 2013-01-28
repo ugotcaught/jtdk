@@ -3,23 +3,24 @@ JS.define('my.CAT1',{
 	requires:'JS.util.Random',
 	constructor: function(color, age){
 		this.setColor(color);
-		this.setAge(age);
+		this.age = age;
 	},
-	fields: {
+	age: 0,
+	getAge: function(){return this.age;},
+	config: {
 		color: 'unknown',
-		get$name: 'CAT1',
-		age: 0
+		name: 'CAT1'
 	},
 	statics: {
     	Version: '1.0'
     },
-    changingColor: function(oldValue, newValue){
+    changingColor: function(newValue, oldValue){
 		JS.log('Color changing-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());	
 	},
-	changedColor: function(oldValue, newValue){
+	changedColor: function(newValue, oldValue){
 		JS.log('Color changed-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());					
 	},
-	applyColor: function(oldValue, newValue){
+	applyColor: function(newValue, oldValue){
 		var R = this.ns('JS.util.Random'), rColor = R.randomColor();
 		JS.log('Color apply-> oldValue is:'+oldValue+' newValue is:'+newValue+' applyValue is a random:'+rColor);		
 		return rColor;		
