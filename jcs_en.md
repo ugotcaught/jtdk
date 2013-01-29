@@ -4,20 +4,21 @@
 >author: Feng.Chun
 
 >update: 2013-1-7
+
 >update: 2013-1-29
 
 ##Define Class
--The class name **SHOULD** be defined as follows: 
+- The class name **SHOULD** be defined as follows: 
 ```html
 projectName.[packageName.]SimpleName
 ```
 
--Each class **SHOULD** be saved as a unique file：
+- Each class **SHOULD** be saved as a unique file：
 ```html
 projectDir/[packgeName/]SimpleName.js
 ```
 
--Each class **MUST** use the following code to define:
+- Each class **MUST** use the following code to define:
 
 ```javascript
     JS.define("projectName.[{packageName.]SimpleName", {
@@ -35,11 +36,11 @@ projectDir/[packgeName/]SimpleName.js
     })
 ```
 
--"JS.Object" **MUST** is the root class of all classes.
+- "JS.Object" **MUST** is the root class of all classes.
 
   
 ##Load Class
--Class files can be loaded synchronously or asynchronously.
+- Class files can be loaded synchronously or asynchronously.
 When loading asynchronously, **SHOULD** using the following code:
 
 ```javascript
@@ -54,7 +55,7 @@ When loading asynchronously, **SHOULD** using the following code:
 
 When not specified the class loader,  Class-System **SHOULD** use the default class loader (JS.ClassLoader) load all classes asynchronously. 
 
--Also ALLOWS define a custom class loader to load a package, as follows:
+- Also ALLOWS define a custom class loader to load a package, as follows:
    
 ```javascript
     var loader = new JS.Loader({id:'loaderID',paths:{"projectName": "/projectDir"}});
@@ -66,7 +67,7 @@ When not specified the class loader,  Class-System **SHOULD** use the default cl
 
 Any custom class loader **MUST** be an instance of "JS.Loader". If you do not specify parent loader for a custom Loader, Class-System **MUST** automatically specified JS.ClassLoader as the parent loader. 
 
--Any class loader can be found by its ID as follows:
+- Any class loader can be found by its ID as follows:
    
 ```javascript
 	var loader = JS.Loader.getLoader("loaderID");
@@ -92,13 +93,13 @@ var loader2 = new JS.Loader({id:'loader2',paths:{'test': '/v2/source'}});
 ##Class Instance Creation
 **MUST** use the following method to create an instance of a class, the premise is the class file was loaded successful.
 
--Loading synchronously
+- Loading synchronously
 
 ```javascript
 	JS.create("projectName.[packageName.]SimpleName", ..) ;
 ```
 
--Loading asynchronously
+- Loading asynchronously
 
 ```javascript
 	JS.imports(["projectName.[packageName.]SimpleName", ..], function{
@@ -108,12 +109,12 @@ var loader2 = new JS.Loader({id:'loader2',paths:{'test': '/v2/source'}});
 
 ##Class Object Reference
 
--Loading synchronously
+- Loading synchronously
 
 ```javascript
 	var classObject = JS.ns("projectName.[packageName.]SimpleName");
 ```
--Loading asynchronously
+- Loading asynchronously
 
 ```javascript
 	JS.imports(["projectName.[packageName.]SimpleName", ..], function{
