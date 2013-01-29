@@ -9,37 +9,32 @@
  */
 JS.define('JS.util.ResourceBundle', {
 	constructor: function(data, lang, country){
-		this._data = data;
-		this._lang = lang;
-		this._country = country;		
+		this.data = data;
+		this.lang = lang;
+		this.country = country;		
 	},
-	fields: {
-		/**
-		 * @method getData
-		 * @return {Object} 
-		 */
-		get$data:null,
-		/**
-		 * @method getLang
-		 * @return {String} 
-		 */
-		get$lang:'en',
-		/**
-		 * @method getCountry
-		 * @return {String} 
-		 */
-		get$country:null
-	},
+	/**
+	 * @field {Object} data
+	 */
+	data:null,
+	/**
+	 * @field {String} lang
+	 */
+	lang:'en',
+	/**
+	 * @field {String} country
+	 */
+	country:null,
 	statics: {
 		/**
-		 * @method create
+		 * @method load
 		 * @static
 		 * @param {String} name
 		 * @param {String} lang
 		 * @param {String} country
 		 * @return {JS.util.ResourceBundle} 
 		 */
-		create: function(name, lang, country){
+		load: function(name, lang, country){
 			var locale = (lang||'') + '_' + (country||''),
 				url = name + (locale?'_'+locale:'')+'.json';
 			
@@ -61,7 +56,7 @@ JS.define('JS.util.ResourceBundle', {
 
             var obj = null;
             if (status === 0 || (status >= 200 && status < 300)) {
-                obj = new JS.util.ResourceBundle(eval('('+xhr.responseText+')'), lang, country);
+                obj = JS.create('JS.util.ResourceBundle', eval('('+xhr.responseText+')'), lang, country);
             }
 
             // Maybe IE memory leak
@@ -75,6 +70,6 @@ JS.define('JS.util.ResourceBundle', {
 	 * @return {Object} 
 	 */
 	getValue: function(key){
-		return this.getData()[key];
+		return this.data?this.data[key]:null;
 	}
 })

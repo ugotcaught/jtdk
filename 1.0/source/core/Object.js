@@ -8,7 +8,7 @@
  * @author feng.chun
  * @date 2012-11-21
  * 
- * @requires /core/JS-base.js
+ * @require /core/JS-base.js
  */
 (function() {
 /**

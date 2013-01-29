@@ -271,7 +271,21 @@ JS = {
     	l.setPath(kvs);
 	},
     /**
-     * Define a class.
+     * Define a class and load all depended classes with the default loader JS.ClassLoader.
+	 * For example:
+	 * JS.define('JS.test.CAT',{
+	 *     constructor: function(name, color){
+	 *         this.setName(name);
+	 *         this.setColor(color);
+	 *     },
+	 *     config: {
+	 *         color: null,
+	 *         name: null
+	 *     },
+	 *     eat: function(food){
+	 *         JS.log('"'+ this.getName() + '" Cat eat some ' + food);
+	 *     }
+	 * });
      * 
 	 * @method define
 	 * @param {String} className
@@ -281,7 +295,7 @@ JS = {
     	JS.ClassLoader.defineClass(className, data);
 	},
 	/**
-	 * Create a instance of a class.
+	 * Create a instance of a class with the default loader JS.ClassLoader.
 	 * 
 	 * @method create
 	 * @param {String} className
@@ -295,13 +309,13 @@ JS = {
 	 * 
 	 * 
 	 * @method factory
-	 * @param {Array} args
 	 * @param {String} className
+	 * @param {Array} args
 	 * @param {Object} instance:optional
 	 * @param {JS.Loader} loader:optional
 	 * @return {Object}
 	 */
-	factory: function(args, className, instance, loader){
+	factory: function(className, args, instance, loader){
 		var l = loader||JS.ClassLoader, clazz = l.findClass(className);
 		if(!clazz) throw new Error('Create the class:<'+className+'> failed.');
 		
@@ -335,12 +349,12 @@ var _callback4Requires= function(name){
 	}
 }
 /**
- * @method requires
+ * @method imports
  * @param {String|String[]} classNames
  * @param {Function} onFinished
  * @param {ClassLoader} loader:optional
  */
-JS.require = function(classNames, onFinished, loader){
+JS.imports = function(classNames, onFinished, loader){
 	var names = Array.toArray(classNames);
 	if(JS.isEmpty(names)) return;
 	

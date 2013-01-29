@@ -26,17 +26,17 @@ JS.setPath({
 });
 
 function test1(){
-	JS.require('my.CAT1', function(){
+	JS.imports('my.CAT1', function(){
 		JS.log(JS.Object.$class.getStatics());
 		JS.log(JS.Object.$class.getMethods());
 		JS.log(JS.Object.$class.getFields());
-		JS.log(JS.Object.$class.getConfigs());
+		JS.log(JS.Object.$class.getConfig());
 				
 		var my = this.ns('my');
 		JS.log(my.CAT1.$class.getStatics());
 		JS.log(my.CAT1.$class.getMethods());
 		JS.log(my.CAT1.$class.getFields());
-		JS.log(my.CAT1.$class.getConfigs());
+		JS.log(my.CAT1.$class.getConfig());
 		
 		var catClass = JS.Class.forName('my.CAT1');
 		var cat = catClass.newInstance('white', 5);

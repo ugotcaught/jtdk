@@ -24,9 +24,11 @@ JS.setPath({
 });
 
 function test1(){
-	JS.require('JS.util.ResourceBundle', function(){
-		var res1 = JS.util.ResourceBundle.create('i18n/messages', 'zh', 'CN');
-		var res2 = JS.util.ResourceBundle.create('i18n/messages', 'en', 'US');
+	JS.imports('JS.util.ResourceBundle', function(){
+		var ResourceBundle = this.ns('JS.util.ResourceBundle');
+		
+		var res1 = ResourceBundle.load('i18n/messages', 'zh', 'CN');
+		var res2 = ResourceBundle.load('i18n/messages', 'en', 'US');
 		
 		console.log(res1.getValue('hello'));
 		console.log(res2.getValue('hello'));

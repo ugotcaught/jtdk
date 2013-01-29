@@ -22,11 +22,11 @@
 JS.setPath({
 	'JS': '../../source'
 });
-var loader1 = new JS.Loader({id:'my-v1',paths:{'my': 'cat/v1'}});
-var loader2 = new JS.Loader({id:'my-v2',paths:{'my': 'cat/v2'}});
+var loader1 = new JS.Loader({id:'my-v1',path:{'my': 'cat/v1'}});
+var loader2 = new JS.Loader({id:'my-v2',path:{'my': 'cat/v2'}});
 	
 function test1(){
-	JS.require(['my.CAT1'], function(){
+	JS.imports(['my.CAT1'], function(){
 		var my = this.ns('my');
 		JS.log(my);
 		JS.log(my.CAT1.$class.getName()=='my.CAT1');
@@ -35,7 +35,7 @@ function test1(){
 		JS.log(cat.getClass().getSuperClass().getSuperClass()===JS.ns('JS.Object').$class);		
 	}, loader1);
 	
-	JS.require(['my.CAT1'], function(){
+	JS.imports(['my.CAT1'], function(){
 		var cat1 = loader1.create('my.CAT1', 'white', 10);
 		JS.log(cat1.sleep());
 		
@@ -45,7 +45,7 @@ function test1(){
 }
 
 function test2(){
-	JS.require('my.CAT2', function(){
+	JS.imports('my.CAT2', function(){
 		JS.log(loader2===this);
 		JS.log(JS.ns('JS.Object')===JS.Class.forName('my.CAT2', this).getSuperClass().getCtor());
 		JS.log(this.ns('my.CAT2'));

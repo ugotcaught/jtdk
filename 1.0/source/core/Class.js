@@ -10,7 +10,7 @@
  * @date 2012-12-03
  * @date 2012-12-19
  * 
- * @requires /core/JS-base.js
+ * @require /core/JS-base.js
  */
 (function() {
 /**
@@ -238,11 +238,11 @@ JS.mix(JS.Class.prototype, {
 	/**
 	 * Returns the classe's all config properties.
 	 * 
-	 * @method getConfigs
+	 * @method getConfig
 	 * @param {Object} obj:optional the class instance
 	 * @return {Object}
 	 */
-	getConfigs: function(obj){
+	getConfig: function(obj){
 		if(this.isSingleton()) return undefined;
 			
 		var config = this._info['config'],
@@ -262,7 +262,7 @@ JS.mix(JS.Class.prototype, {
 	/**
 	 * Set a new value to a field.
 	 * 
-	 * @method setConfigValue
+	 * @method setField
 	 * @param {Object} obj the class instance.If this field is static, pass a NULL
 	 * @param {String} fieldName the field name
 	 * @param {Object} newValue the field name

@@ -31,7 +31,7 @@ JS.log(objectClass.getSuperName());
 JS.log(objectClass.getSuperClass());
 	
 function test(){
-	JS.require(['test.cc.C5','test.cc.C6'], function(){
+	JS.imports(['test.cc.C5','test.cc.C6'], function(){
 		JS.log(this.ns('test.cc'));
 		JS.log(JS.ClassLoader.getClasses());
 		

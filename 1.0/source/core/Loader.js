@@ -10,9 +10,9 @@
  * @date 2012-12-03
  * @date 2012-12-19
  * 
- * @requires /core/JS-base.js
- * @requires /core/Object.js
- * @requires /core/Class.js
+ * @require /core/JS-base.js
+ * @require /core/Object.js
+ * @require /core/Class.js
  */
 (function() {
 var head = document.head||document.getElementsByTagName('head')[0];
@@ -54,7 +54,13 @@ var _findClassPathKey = function(className, paths){
 
 var loaders = {}; 
 /**
+ * JS class dynamic loader.
+ * App can customize a new loader. If app do not specify a parent loader, 
+ * then JS.ClassLoader automatically become the default parent loader.
+ * 
  * @class JS.Loader
+ * @constructor
+ * @param {Object} config has properties: "id", "parent", "path"
  */
 JS.Loader = function(config){
 	this.id = config['id'];
@@ -64,18 +70,32 @@ JS.Loader = function(config){
 	loaders[this.id] = this;	
 	this._definedClasses = {};
 	this._loadedClasses = {};
-	this._paths = config['paths']||{};
+	this._paths = config['path']||{};
 	this._events = {};
 }
-
+/**
+ * @static
+ * @method getLoader
+ * @param {String} id
+ * @returns
+ */
 JS.Loader.getLoader = function(id){
 	return loaders[id];
 }
 
 JS.Loader.prototype = {
+	/**
+	 * @method setPath
+	 * @param {Object} ps 
+	 */	
 	setPath: function(ps){
 		JS.mix(this._paths, ps);
 	},
+	/**
+	 * @method getPath
+	 * @param {String} key
+	 * @return {String}
+	 */
 	getPath: function(key){
 		var p = {};
 		
@@ -84,13 +104,29 @@ JS.Loader.prototype = {
 		
 		return key?p[key]:p;
 	},
+	/**
+	 * namespace's alias.
+	 * @method ns
+	 * @param {String} name
+	 * @return {Object}
+	 */
 	ns: function(name){
 		return ns(name, this);
 	},
+	/**
+	 * Returns true if the class be loaded successfully.
+	 * @param {String} name
+	 * @return {Boolean}
+	 */
 	hasClass: function(name){
 		if(JS.isArray(name)) return name.every(function(a){return this.hasClass(a)},this);		
 		return this.findClass(name)?true:false;
-	},	
+	},
+	/**
+	 * Return the loaded class by name
+	 * @param name
+	 * @return {JS.Class}
+	 */
 	findClass: function(name){
 		if(this.parent){
 			var clazz = this.parent.findClass(name);
@@ -98,22 +134,51 @@ JS.Loader.prototype = {
 		}
 		return this._loadedClasses[name];
 	},
+	/**
+	 * @method getClasses
+	 * @return {Array<JS.Object>}
+	 */
 	getClasses: function(){
 		return this._loadedClasses;
 	},
 	/**
+	 * Build a new Class instance with the current loader.
+	 * 
 	 * @method create
 	 * @param {String} className
 	 * @param {Object..} arguments[1..n]
 	 * @return {Object}
+	 * @throws {Error} the class was not loaded or is singleton
 	 */
 	create: function(){
 		var className = arguments[0],
 		clazz = this.findClass(className);
-		if(!clazz) throw new Error('Create the class:<'+className+'> failed.');
+		if(!clazz) throw new Error('Create a class instance:<'+className+'> failed.');
+		if(clazz.isSingleton()) throw new Error('Instantiate a singleton class:<'+className+'> failed.');
 		
 		return JS.Class.prototype.newInstance.apply(clazz, [].slice.call(arguments,1));
 	},
+	/**
+	 * Define a class and load all depended classes.
+	 * For example:
+	 * JS.define('JS.test.CAT',{
+	 *     constructor: function(name, color){
+	 *         this.setName(name);
+	 *         this.setColor(color);
+	 *     },
+	 *     config: {
+	 *         color: null,
+	 *         name: null
+	 *     },
+	 *     eat: function(food){
+	 *         JS.log('"'+ this.getName() + '" Cat eat some ' + food);
+	 *     }
+	 * });
+	 * 
+	 * @method defineClass
+	 * @param {String} name the class name
+	 * @param {Object} data has properties: extend, mixins, requires, constructor, statics, config...
+	 */
 	defineClass: function(name, data){
 		if(this.hasClass(name)) return;
 		
@@ -237,7 +302,7 @@ JS.Loader.prototype = {
             xhr.send(null);
         }
         catch (e) {
-            throw new Error('Read file<'+url+'> failed');
+            throw new Error('Read file<'+url+'> failed. Maybe you should use HTTP server for this cross origin request.');
         }
         status = (xhr.status === 1223) ? 204 : xhr.status;
 
@@ -268,5 +333,5 @@ JS.Loader.prototype = {
 
 })();
 
-JS.ClassLoader = new JS.Loader({id:'JS.ClassLoader',paths:{'JS': '.'}});
+JS.ClassLoader = new JS.Loader({id:'JS.ClassLoader',path:{'JS': '.'}});
 JS.ClassLoader.newClass('JS.Object');
