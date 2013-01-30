@@ -15,6 +15,8 @@
  * @require /core/Class.js
  */
 (function() {
+JS.setConfig('js.loader.multi', true);
+	
 var head = document.head||document.getElementsByTagName('head')[0];
 var ns = function(pkg, namespace) {
 	if(!pkg) return namespace||window;
@@ -43,13 +45,13 @@ var _getClassInfo = function(className){
 		simpleName: simpleName
 	}
 }
-var _findClassPathKey = function(className, paths){
+var _findPathKey = function(className, paths){
 	var pos = className.lastIndexOf('.'),
 		pName = className.slice(0, pos);
 	if(!pName) return null;
 	if(paths[pName]) return pName;
 	
-	return _findClassPathKey(pName, paths);
+	return _findPathKey(pName, paths);
 }
 
 var loaders = {}; 
@@ -77,10 +79,10 @@ JS.Loader = function(config){
  * @static
  * @method getLoader
  * @param {String} id
- * @returns
+ * @return {JS.Loader|Object}
  */
 JS.Loader.getLoader = function(id){
-	return loaders[id];
+	return id?loaders[id]:loaders;
 }
 
 JS.Loader.prototype = {
@@ -94,7 +96,7 @@ JS.Loader.prototype = {
 	/**
 	 * @method getPath
 	 * @param {String} key
-	 * @return {String}
+	 * @return {String|Array<String>|Object}
 	 */
 	getPath: function(key){
 		var p = {};
@@ -188,7 +190,7 @@ JS.Loader.prototype = {
 		var arrayExtend = extend?[extend]:[],
 			mixins = Array.toArray(data['mixins']||[]),
 			requires = Array.toArray(data['requires']||[]),
-			depends = arrayExtend.concat(mixins, requires).uniq();
+			depends = this.resolveClassNames(arrayExtend.concat(mixins, requires).uniq());
 		
 		var info = _getClassInfo(name);
 		info['depends'] = depends;
@@ -219,7 +221,7 @@ JS.Loader.prototype = {
 		var	info = d['info'],
 			data = d['data'];
 		
-		if(JS.ClassBuilder.build(info, data, this)){	
+		if(JS.ClassBuilder.build(info, data, this)){
 			this.fireEvent('classBuilded', info['className']);
 			
 			delete this._definedClasses[name];
@@ -258,8 +260,28 @@ JS.Loader.prototype = {
 				},this);			
 		},this);		
 	},
-	resolvePath: function(className){
-		var pathKey = _findClassPathKey(className, this.getPath());
+	resolveClassNames: function(classNames){
+		var paths = this.getPath(),
+		    newArray = [];
+		
+		var hasReplace = false;
+		classNames.forEach(function(a, i){
+			var cp = paths[a];
+			if(cp && JS.isArray(cp)) {
+				newArray = newArray.concat(cp);
+				hasReplace = true;
+			}else{
+				newArray.push(a);
+			}			
+		});		
+		if(!hasReplace) {
+			return newArray;		
+		}else{
+			return this.resolveClassNames(newArray);
+		}		
+	},
+	_resolvePath: function(className){
+		var pathKey = _findPathKey(className, this.getPath());
 		    
 		if(pathKey){
 			className = className.replace(/\./gi, '/');
@@ -286,7 +308,7 @@ JS.Loader.prototype = {
 			return;
 		}	
         
-		var src = this.resolvePath(className);
+		var src = this._resolvePath(className);
         this._loadScript(className, src, onloaded, scope);
 	},
 	_readJS: function(url){
@@ -302,7 +324,7 @@ JS.Loader.prototype = {
             xhr.send(null);
         }
         catch (e) {
-            throw new Error('Read file<'+url+'> failed. Maybe you should use HTTP server for this cross origin request.');
+            throw new Error('Reading js file failed: '+url+'. Maybe you should use HTTP server for this cross origin request.');
         }
         status = (xhr.status === 1223) ? 204 : xhr.status;
 
@@ -313,6 +335,7 @@ JS.Loader.prototype = {
 	},
 	_loadScript: function(name, src, onloaded, scope){
 		var script = document.createElement('script'),
+		    url = src + '?_dt=' + (new Date().getTime()),
         	onloadFn = function() {	
 				if(onloaded) onloaded.call(scope);				
             };
@@ -322,12 +345,25 @@ JS.Loader.prototype = {
 		script.setAttribute('loaderid', this.id);
 		script.setAttribute('classname', name);
 
-		var code = this._readJS(src + '?_dt=' + (new Date().getTime()));
-		code = code.replace(/JS.define\(/g, 'JS.Loader.getLoader("'+this.id+'").defineClass(');
+		if(JS.getConfig('js.loader.multi')){
+			var code = this._readJS(url);
+			code = code.replace(/JS.define\(/g, 'JS.Loader.getLoader("'+this.id+'").defineClass(');
+			
+	    	script.text = code;
+	    	head.insertBefore(script, head.firstChild);  
+			onloadFn();	
+		}else{
+			script.src = url;
+			script.onload = onloadFn;
+	        script.onerror = function(){throw new Error('Loading js file failed: '+url+'.')};
+	        script.onreadystatechange = function() {//for IE
+	        	if (this.readyState === 'loaded' || this.readyState === 'complete') {
+	                onloadFn();
+	            }
+	        };			
+			head.appendChild(script);
+		}
 		
-    	script.text = code;
-    	head.insertBefore(script, head.firstChild);  
-		onloadFn();	
 	}
 }
 

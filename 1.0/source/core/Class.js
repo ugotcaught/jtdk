@@ -310,6 +310,26 @@ JS.mix(JS.Class.prototype, {
 
 JS.mix(JS.Class, {
 	/**
+	 * @method getClasses
+	 * @param {String|JS.Loader} loader:optional loader'id or instance
+	 * @return {Array<JS.Class>}
+	 */
+	getClasses: function(loader){
+		var loaders = {};
+		if(loader){
+			var loader = JS.isString(loader)?JS.Loader.getLoader(loader):loader;
+			loaders[loader['id']] = loader;
+		}else{
+			loaders = JS.Loader.getLoader();
+		}
+		
+		var classes = [];
+		for(var k in loaders){
+			classes = classes.concat(loaders[k].getClasses());
+		}
+		return classes;
+	},	
+	/**
 	 * Find Class for name.
 	 * 
 	 * @method forName

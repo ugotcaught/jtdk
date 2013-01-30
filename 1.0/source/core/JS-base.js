@@ -65,7 +65,7 @@ var OP = Object.prototype,
 	logTypes = {'undefined':1,'null':1,'string':1,'number':1,'boolean':1,'date':1,'array':1};
 
 JS = {
-	version: '1.0.0',
+	version: '1.0.0-SNAPSHOT',
 	/**
 	 * Print the object on Console.
 	 * 
@@ -73,13 +73,14 @@ JS = {
 	 * @param {Object} obj
 	 */
 	log: function(obj){
-		var s = (JS.typeOf(obj)) in logTypes?JS.stringify(obj):obj;
-		if(window.console) {
+		var s = (JS.typeOf(obj)) in logTypes?JS.stringify(obj):obj,
+			cosole = JS.getConfig('js.console');
+		if(console.postError) {
+			console.postError(s);
+		}else if(console.log) {
 			console.log(s);
-		}else if(window.opera) {
-			opera.postError(s);
 		}else {
-			window.statusbar = s;
+			console = s;
 		}
 	},
 	/**
@@ -332,6 +333,30 @@ JS = {
 	}
 }
 
+var _sysConfig = {
+	'js.console': window.console?window.console:(window.opera?window.opera:window.statusbar)
+};
+/**
+ * Gets the system config indicated by the specified key.
+ * 
+ * @method getConfig
+ * @param {String} key
+ * @return {Object}
+ */
+JS.getConfig = function(key){
+	return key?_sysConfig[key]:_sysConfig;
+}
+/**
+ * Sets the system config indicated by the specified key.
+ * 
+ * @method setConfig
+ * @param {String} key
+ * @param {Object} value
+ */
+JS.setConfig = function(key, value){
+	_sysConfig[key] = value;
+}
+
 var _requireCallbacks = {};
 var _callback4Requires= function(name){
 	for(k in _requireCallbacks) {
@@ -355,10 +380,10 @@ var _callback4Requires= function(name){
  * @param {ClassLoader} loader:optional
  */
 JS.imports = function(classNames, onFinished, loader){
-	var names = Array.toArray(classNames);
+	var l = loader||JS.ClassLoader,
+	    names = l.resolveClassNames(Array.toArray(classNames));
 	if(JS.isEmpty(names)) return;
 	
-	var l = loader||JS.ClassLoader;
 	if(l.hasClass(names)){
 		if(JS.isFunction(onFinished)) onFinished.call(l);
 	}else{

@@ -27,6 +27,9 @@ JS.setPath({
 
 function test1(){
 	JS.imports('my.CAT1', function(){
+		var JS = this.ns('JS'),
+		    my = this.ns('my');
+		
 		JS.log(JS.Object.$class.getStatics());
 		JS.log(JS.Object.$class.getMethods());
 		JS.log(JS.Object.$class.getFields());

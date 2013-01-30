@@ -21,7 +21,20 @@
 <script>
 JS.setPath({
 	'JS': '../../source',
-	'test': '.'
+	'my': './cat/v1',
+  	'my.*': [
+         'my.CAT1',
+       	 'my.CAT1',
+   	     'my.Sleep',
+   	     'my.Sleepable'],
+   	'test': '.',
+  	'test.cc.*': [
+         'test.cc.C1',
+       	 'test.cc.C2',
+   	     'test.cc.C3',
+   	     'test.cc.C4',
+   	     'test.cc.C5',
+   	     'test.cc.C6']
 });
 
 var objectClass = JS.ns('JS.Object').$class;
@@ -30,8 +43,24 @@ JS.log(objectClass.getCtor());
 JS.log(objectClass.getSuperName());
 JS.log(objectClass.getSuperClass());
 	
-function test(){
-	JS.imports(['test.cc.C5','test.cc.C6'], function(){
+function test1(){
+	JS.setConfig('js.loader.multi', true);
+	
+	JS.imports(['test.cc.*'], function(){
+		JS.log(this.ns('test.cc'));
+		JS.log(JS.Class.getClasses());
+		
+		for(var i=1;i<7;i++){
+			var c = this.create('test.cc.C'+i);
+			JS.log(c.getClass().getName()+'\'s <method> is '+c.method());
+		}		
+	})	
+}
+
+function test2(){
+	JS.setConfig('js.loader.multi', false);
+	
+	JS.imports('test.cc.*', function(){
 		JS.log(this.ns('test.cc'));
 		JS.log(JS.ClassLoader.getClasses());
 		
@@ -46,6 +75,7 @@ function test(){
 </head>
 
 <body>
-<button onclick="test();">test</button>
+<button onclick="test1();">multi loader</button>
+<button onclick="test2();">single loader</button>
 </body>
 </html>
