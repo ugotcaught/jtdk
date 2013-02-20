@@ -13,7 +13,7 @@
 
 <title>JSDK Example</title>
 
-<script language="JavaScript" type="text/javascript" src="../../source/core/JS-base.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Base.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
@@ -21,38 +21,34 @@
 <script>
 JS.setPath({
 	'JS': '../../source',
-	'my': './cat/v1',
-  	'my.*': [
-         'my.CAT1',
-       	 'my.CAT1',
-   	     'my.Sleep',
-   	     'my.Sleepable'],
-   	'test': '.',
-  	'test.cc.*': [
-         'test.cc.C1',
-       	 'test.cc.C2',
-   	     'test.cc.C3',
-   	     'test.cc.C4',
-   	     'test.cc.C5',
-   	     'test.cc.C6']
+	'test': './bundles/testcc'
+});
+JS.setPackage({
+	'test.*':['test.base.*','test.ext.*'],
+	'test.base.*':['test.base.C1','test.base.C2'],
+	'test.ext.*':[
+	      'test.ext.C3',
+	      'test.ext.C4',
+	      'test.ext.C5',
+	      'test.ext.C6']
 });
 
-var objectClass = JS.ns('JS.Object').$class;
-JS.log(objectClass.getName());
-JS.log(objectClass.getCtor());
-JS.log(objectClass.getSuperName());
-JS.log(objectClass.getSuperClass());
+var objectClass = JS.ns('JS.Object').klass;
+JS.print(objectClass.getName());
+JS.print(objectClass.getCtor());
+JS.print(objectClass.getSuperName());
+JS.print(objectClass.getSuperClass());
 	
 function test1(){
 	JS.setConfig('js.loader.multi', true);
 	
-	JS.imports(['test.cc.*'], function(){
-		JS.log(this.ns('test.cc'));
-		JS.log(JS.Class.getClasses());
+	JS.imports(['test.*'], function(){
+		JS.print(this.ns('test.ext'));
+		JS.print(JS.Class.getClasses());
 		
-		for(var i=1;i<7;i++){
-			var c = this.create('test.cc.C'+i);
-			JS.log(c.getClass().getName()+'\'s <method> is '+c.method());
+		for(var i=3;i<7;i++){
+			var c = this.create('test.ext.C'+i);
+			JS.print(c.getClass().getName()+'\'s <method> is '+c.method());
 		}		
 	})	
 }
@@ -60,13 +56,13 @@ function test1(){
 function test2(){
 	JS.setConfig('js.loader.multi', false);
 	
-	JS.imports('test.cc.*', function(){
-		JS.log(this.ns('test.cc'));
-		JS.log(JS.ClassLoader.getClasses());
+	JS.imports(['test.*'], function(){
+		JS.print(this.ns('test.ext'));
+		JS.print(JS.ClassLoader.getClasses());
 		
-		for(var i=1;i<7;i++){
-			var c = this.create('test.cc.C'+i);
-			JS.log(c.getClass().getName()+'\'s <method> is '+c.method());
+		for(var i=3;i<7;i++){
+			var c = this.create('test.ext.C'+i);
+			JS.print(c.getClass().getName()+'\'s <method> is '+c.method());
 		}		
 	})	
 }

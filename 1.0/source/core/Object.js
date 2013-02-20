@@ -8,7 +8,7 @@
  * @author feng.chun
  * @date 2012-11-21
  * 
- * @require /core/JS-base.js
+ * @require /core/Base.js
  */
 (function() {
 /**
@@ -26,7 +26,7 @@ JS.mix(JS.Object.prototype, {
 	 * @return {JS.Class}
 	 */
 	getClass: function(){
-		return JS.Object.$class;
+		return JS.Object.klass;
 	},
 	/**
 	 * Returns the super class.

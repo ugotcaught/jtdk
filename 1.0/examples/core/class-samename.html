@@ -13,7 +13,7 @@
 
 <title>JSDK Example</title>
 
-<script language="JavaScript" type="text/javascript" src="../../source/core/JS-base.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Base.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
@@ -28,27 +28,27 @@ var loader2 = new JS.Loader({id:'my-v2',path:{'my': 'cat/v2'}});
 function test1(){
 	JS.imports(['my.CAT1'], function(){
 		var my = this.ns('my');
-		JS.log(my);
-		JS.log(my.CAT1.$class.getName()=='my.CAT1');
+		JS.print(my);
+		JS.print(my.CAT1.klass.getName()=='my.CAT1');
 		
 		var cat = this.create('my.CAT1', 'white', 10);
-		JS.log(cat.getClass().getSuperClass().getSuperClass()===JS.ns('JS.Object').$class);		
+		JS.print(cat.getClass().getSuperClass().getSuperClass()===JS.ns('JS.Object').klass);		
 	}, loader1);
 	
 	JS.imports(['my.CAT1'], function(){
 		var cat1 = loader1.create('my.CAT1', 'white', 10);
-		JS.log(cat1.sleep());
+		JS.print(cat1.sleep());
 		
 		var cat2 = loader2.create('my.CAT1', 'white', 10);
-		JS.log(cat2.sleep());
+		JS.print(cat2.sleep());
 	}, loader2);
 }
 
 function test2(){
 	JS.imports('my.CAT2', function(){
-		JS.log(loader2===this);
-		JS.log(JS.ns('JS.Object')===JS.Class.forName('my.CAT2', this).getSuperClass().getCtor());
-		JS.log(this.ns('my.CAT2'));
+		JS.print(loader2===this);
+		JS.print(JS.ns('JS.Object')===JS.Class.forName('my.CAT2', this).getSuperClass().getCtor());
+		JS.print(this.ns('my.CAT2'));
 	}, loader2);	
 }
 

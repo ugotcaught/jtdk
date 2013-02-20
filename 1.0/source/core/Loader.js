@@ -10,7 +10,7 @@
  * @date 2012-12-03
  * @date 2012-12-19
  * 
- * @require /core/JS-base.js
+ * @require /core/Base.js
  * @require /core/Object.js
  * @require /core/Class.js
  */
@@ -45,13 +45,43 @@ var _getClassInfo = function(className){
 		simpleName: simpleName
 	}
 }
-var _findPathKey = function(className, paths){
+var _findPathKeyByClassName = function(className, paths){
 	var pos = className.lastIndexOf('.'),
-		pName = className.slice(0, pos);
-	if(!pName) return null;
+		pName = pos>-1?className.slice(0, pos):className;
 	if(paths[pName]) return pName;
-	
-	return _findPathKey(pName, paths);
+	if(pos < 0) return null;
+	return _findPathKeyByClassName(pName, paths);
+}
+var _findPathKeyByFile = function(filePath, paths){
+	var pos = filePath.indexOf('/'),
+		pName = pos>-1?filePath.slice(0, pos):filePath;
+	return paths[pName]?pName:null;
+}
+
+var _parseURI = function(uri, loader){
+	var path = null, type = 'class';
+	if(uri.startsWith('js://')){
+		type = 'js';
+		path = uri.slice(5);
+		var pathKey = _findPathKeyByFile(path, loader.getPath());
+		path = pathKey?path.replace(pathKey, loader.getPath(pathKey)):path;
+	}else if(uri.startsWith('css://')){
+		type = 'css';
+		path = uri.slice(6);
+		var pathKey = _findPathKeyByFile(path, loader.getPath());
+		path = pathKey?path.replace(pathKey, loader.getPath(pathKey)):path;
+	}else{//single class file
+		var className = uri;
+		var pathKey = _findPathKeyByClassName(className, loader.getPath());
+		className = className.replace(/\./gi, '/');
+		className = pathKey?className.replace(pathKey.replace(/\./gi, '/'), loader.getPath(pathKey)):'./' + className;	
+		path = className+'.js';
+	}
+	return {
+		type:type,
+		path:path,
+		uri:uri
+	}
 }
 
 var loaders = {}; 
@@ -72,7 +102,9 @@ JS.Loader = function(config){
 	loaders[this.id] = this;	
 	this._definedClasses = {};
 	this._loadedClasses = {};
+	this._loadedFiles = {};
 	this._paths = config['path']||{};
+	this._packages = config['package']||{};
 	this._events = {};
 }
 /**
@@ -107,6 +139,26 @@ JS.Loader.prototype = {
 		return key?p[key]:p;
 	},
 	/**
+	 * @method setPackage
+	 * @param {Object} ps 
+	 */	
+	setPackage: function(ps){
+		JS.mix(this._packages, ps);
+	},
+	/**
+	 * @method getPackage
+	 * @param {String} key
+	 * @return {String|Array<String>|Object}
+	 */
+	getPackage: function(key){
+		var p = {};
+		
+		if(this.parent) p = JS.mix(p, this.parent.getPackage());
+		p = JS.mix(p, this._packages);
+		
+		return key?p[key]:p;
+	},
+	/**
 	 * namespace's alias.
 	 * @method ns
 	 * @param {String} name
@@ -114,6 +166,31 @@ JS.Loader.prototype = {
 	 */
 	ns: function(name){
 		return ns(name, this);
+	},
+	newFile: function(uri, id){
+		var dom = document.getElementById(id);
+		if(!dom) return;
+		this._loadedFiles[uri] = id;	
+	},
+	/**
+	 * Returns true if the file be loaded successfully.
+	 * @param {String} uri
+	 * @return {Boolean}
+	 */
+	hasFile: function(uri){		
+		return this.findFile(uri)?true:false;
+	},
+	/**
+	 * Return the loaded file by uri
+	 * @param uri
+	 * @return {String} file element's id
+	 */
+	findFile: function(uri){
+		if(this.parent){
+			var file = this.parent.findFile(uri);
+			if(file) return file;
+		}
+		return this._loadedFiles[uri];
 	},
 	/**
 	 * Returns true if the class be loaded successfully.
@@ -173,7 +250,7 @@ JS.Loader.prototype = {
 	 *         name: null
 	 *     },
 	 *     eat: function(food){
-	 *         JS.log('"'+ this.getName() + '" Cat eat some ' + food);
+	 *         ('"'+ this.getName() + '" Cat eat some ' + food);
 	 *     }
 	 * });
 	 * 
@@ -205,9 +282,14 @@ JS.Loader.prototype = {
 		if(JS.isEmpty(depends)){
 			this._buildClass(name);
 		}else{
+			var wait = false;
 			depends.forEach(function(a){
-				if(a!='JS.Object') this.loadClass(a);
+				if(a!='JS.Object' && !this.hasClass(a)) {
+					wait = true;
+					this.loadClass(a);
+				}
 			},this);
+			if(!wait) this._buildClass(name);
 		}		
 	},
 	_buildAll: function(){
@@ -216,8 +298,10 @@ JS.Loader.prototype = {
 		}
 	},
 	_buildClass: function(className){
+		if(this.hasClass(className)) return;
+		
 		var d = this._definedClasses[className];
-		if(!d) return false;
+		if(!d) return;
 		var	info = d['info'],
 			data = d['data'];
 		
@@ -226,9 +310,9 @@ JS.Loader.prototype = {
 			
 			delete this._definedClasses[name];
 			this._buildAll();
-			return true;
+			return;
 		}
-		return false;
+		return;
 	},
 	onEvent: function(name, fn){
 		var fns = this._events[name];
@@ -252,16 +336,56 @@ JS.Loader.prototype = {
 	loadClass: function(name){
 		var names = Array.toArray(name);
 		
-		names.forEach(function(a){
-			if(this.hasClass(a)) return;
+		names.forEach(function(a){//a is URI 
+			var rst = _parseURI(a, this),
+			    type = rst['type'],
+			    uri = rst['uri']
+				path = rst['path'];
 			
-			this._loadJS(a,function(){
+			if(type=='css'){//load css
+				var onloaded = function(){
+					this.newFile(uri, this.id+'_'+uri);
+					this._buildAll();
+				};
+				if(this.hasFile(uri)){
+					onloaded.call(this);
+					return;
+				}	
+				this._loadCss(uri, path, onloaded);
+			}else if(type=='js'){//load js
+				var onloaded = function(){
+					this._buildAll();
+				};
+				if(this.hasFile(uri)){
+					onloaded.call(this);
+					return;
+				}	
+				this._loadScript(type, uri, path, onloaded);
+			}else if(type=='class'){//load class
+				var onloaded = function(){
 					this._buildClass(a);
-				},this);			
+				};
+				if(this.hasClass(uri)){
+					onloaded.call(this);
+					return;
+				}	
+				this._loadScript(type, uri, path, onloaded);
+//			}else if(type=='jsb'){//load bundle
+//				var onloaded = function(){
+//					this._buildClass(a);
+//				};
+//				if(this.hasClass(uri)){
+//					onloaded.call(this);
+//					return;
+//				}	
+//				this._loadBundle(uri, path, onloaded);
+			}else{
+				throw new Error('An unknown URI found:'+a);
+			}		
 		},this);		
 	},
 	resolveClassNames: function(classNames){
-		var paths = this.getPath(),
+		var paths = this.getPackage(),
 		    newArray = [];
 		
 		var hasReplace = false;
@@ -280,51 +404,14 @@ JS.Loader.prototype = {
 			return this.resolveClassNames(newArray);
 		}		
 	},
-	_resolvePath: function(className){
-		var pathKey = _findPathKey(className, this.getPath());
-		    
-		if(pathKey){
-			className = className.replace(/\./gi, '/');
-			className = className.replace(pathKey.replace(/\./gi, '/'), this.getPath(pathKey));			
-		}else{
-			className = className.replace(/\./gi, '/');	
-			className = './' + className;	
-		}
-		return className+'.js';
-	},
-	_loadJS: function(className, onloaded, scope){
-//		var isLib = className.startsWith('lib:'),
-//			id = isLib?className.slice(4):className,
-			isLoaded = false;		
-		
-		if(this.hasClass(className)){
-			isLoaded = true;
-		}else if(document.getElementById(this.id+'_'+className)){
-			isLoaded = true;	
-		}	
-			
-		if(isLoaded){
-			if(onloaded) onloaded.call(scope);
-			return;
-		}	
-        
-		var src = this._resolvePath(className);
-        this._loadScript(className, src, onloaded, scope);
-	},
-	_readJS: function(url){
-		var xhr = null;
-		if (typeof XMLHttpRequest != 'undefined') {
-            xhr = new XMLHttpRequest();
-        } else {
-            xhr = new ActiveXObject('Microsoft.XMLHTTP');
-        }
-
-        try {
+	_readTextFile: function(url){
+		var xhr = typeof XMLHttpRequest != 'undefined'?new XMLHttpRequest():new ActiveXObject('Microsoft.XMLHTTP');
+		try {
             xhr.open('GET', url, false);
             xhr.send(null);
         }
         catch (e) {
-            throw new Error('Reading js file failed: '+url+'. Maybe you should use HTTP server for this cross origin request.');
+            throw new Error('Reading text file failed: '+url+'. Maybe you should use HTTP server for this cross origin request.');
         }
         status = (xhr.status === 1223) ? 204 : xhr.status;
 
@@ -333,37 +420,76 @@ JS.Loader.prototype = {
         
         return txt;
 	},
-	_loadScript: function(name, src, onloaded, scope){
-		var script = document.createElement('script'),
+	_loadBundle: function(name, src, onloaded){
+		var url = src + '?_dt=' + (new Date().getTime());
+		var json = eval("("+this._readTextFile(url)+")");
+		
+		this.setPackage(json['packages']);
+		JS.imports(json['name']+'.*',onloaded,this);
+	},
+	_loadCss: function(name, src, onloaded){
+		var css = document.createElement('link'), 
+		    scope = this, 
+		    onloadFn = function() {	
+				if(onloaded) onloaded.call(scope);
+				css.onload = css.onreadystatechange = null;
+	        };		
+		
+		css.href = src + '?_dt=' + (new Date().getTime());
+		css.rel = 'stylesheet';
+		css.type = 'text/css';
+		css.id = this.id+'_'+name;	
+		
+		css.onload = onloadFn;
+        css.onerror = function(){throw new Error('Loading css file failed: '+src+'.')};
+        css.onreadystatechange = function() {//for IE
+        	if (this.readyState === 'loaded' || this.readyState === 'complete') {
+                onloadFn();
+            }
+        };        
+		head.appendChild(css);	
+	},
+	_loadScript: function(type, name, src, onloaded){
+		var el = document.createElement('script'),
+		    id = this.id+'_'+name,
 		    url = src + '?_dt=' + (new Date().getTime()),
+		    scope = this, 
         	onloadFn = function() {	
-				if(onloaded) onloaded.call(scope);				
+				if(onloaded) onloaded.call(scope);
+				// Maybe memory leak in IE
+                el.onload = el.onreadystatechange = null;
+                if (head && el.parentNode) {
+                    head.removeChild(el);
+                }
             };
 
-        script.id = this.id+'_'+name;
-		script.type = 'text/javascript';
-		script.setAttribute('loaderid', this.id);
-		script.setAttribute('classname', name);
+        el.id = id;
+		el.type = 'text/javascript';
+		el.setAttribute('loaderid', this.id);
+		el.setAttribute('uri', name);
 
 		if(JS.getConfig('js.loader.multi')){
-			var code = this._readJS(url);
+			var code = this._readTextFile(url);
 			code = code.replace(/JS.define\(/g, 'JS.Loader.getLoader("'+this.id+'").defineClass(');
 			
-	    	script.text = code;
-	    	head.insertBefore(script, head.firstChild);  
+			if(type!='class'){
+				code+= 'JS.Loader.getLoader("'+this.id+'").newFile("'+name+'","'+id+'");';							
+			}		
+			
+	    	el.text = code;
+	    	head.insertBefore(el, head.firstChild);  
 			onloadFn();	
 		}else{
-			script.src = url;
-			script.onload = onloadFn;
-	        script.onerror = function(){throw new Error('Loading js file failed: '+url+'.')};
-	        script.onreadystatechange = function() {//for IE
+			el.src = url;
+			el.onload = onloadFn;
+	        el.onerror = function(){throw new Error('Loading js file failed: '+src+'.')};
+	        el.onreadystatechange = function() {//for IE
 	        	if (this.readyState === 'loaded' || this.readyState === 'complete') {
 	                onloadFn();
 	            }
-	        };			
-			head.appendChild(script);
-		}
-		
+	        };	        
+			head.appendChild(el);
+		}		
 	}
 }
 

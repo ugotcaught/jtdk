@@ -13,7 +13,7 @@
 
 <title>JSDK Example</title>
 
-<script language="JavaScript" type="text/javascript" src="../../source/core/JS-base.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Base.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
 <script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
@@ -21,39 +21,37 @@
 <script>
 JS.setPath({
 	'JS': '../../source',
-	'my': 'cat/v1',
-	'test': '.'
+	'my': 'cat/v1'
 });
 
 function test1(){
 	JS.imports('my.CAT1', function(){
-		var JS = this.ns('JS'),
-		    my = this.ns('my');
+		var my = this.ns('my');
 		
-		JS.log(JS.Object.$class.getStatics());
-		JS.log(JS.Object.$class.getMethods());
-		JS.log(JS.Object.$class.getFields());
-		JS.log(JS.Object.$class.getConfig());
+		JS.print(JS.Object.klass.getStatics());
+		JS.print(JS.Object.klass.getMethods());
+		JS.print(JS.Object.klass.getFields());
+		JS.print(JS.Object.klass.getConfig());
 				
 		var my = this.ns('my');
-		JS.log(my.CAT1.$class.getStatics());
-		JS.log(my.CAT1.$class.getMethods());
-		JS.log(my.CAT1.$class.getFields());
-		JS.log(my.CAT1.$class.getConfig());
+		JS.print(my.CAT1.klass.getStatics());
+		JS.print(my.CAT1.klass.getMethods());
+		JS.print(my.CAT1.klass.getFields());
+		JS.print(my.CAT1.klass.getConfig());
 		
 		var catClass = JS.Class.forName('my.CAT1');
 		var cat = catClass.newInstance('white', 5);
 		
-		JS.log(catClass.getConfigProperty(cat, 'color'));
+		JS.print(catClass.getConfigProperty(cat, 'color'));
 		catClass.setConfigProperty(cat, 'color', 'black');
-		JS.log(catClass.getConfigProperty(cat, 'color'));
+		JS.print(catClass.getConfigProperty(cat, 'color'));
 		
-		JS.log(catClass.getField(cat, 'age'));
+		JS.print(catClass.getField(cat, 'age'));
 		catClass.setField(cat, 'age', '10');
-		JS.log(catClass.getField(cat, 'age'));
+		JS.print(catClass.getField(cat, 'age'));
 		
 		catClass.invokeMethod(cat, 'setName', 'YOMI');
-		JS.log(catClass.invokeMethod(cat, 'getName'));		
+		JS.print(catClass.invokeMethod(cat, 'getName'));		
 	})	
 }
 

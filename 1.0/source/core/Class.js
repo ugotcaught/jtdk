@@ -10,7 +10,7 @@
  * @date 2012-12-03
  * @date 2012-12-19
  * 
- * @require /core/JS-base.js
+ * @require /core/Base.js
  */
 (function() {
 /**
@@ -36,7 +36,7 @@ JS.Class = function(classInfo, loader){
 	this._ctor = loader.ns(this._info['packageName'])[this._info['simpleName']];
 	
 	if(!this._ctor) throw new Error('Not found the class:<'+className+'> by loader.');
-	this._ctor.$class = this;
+	this._ctor.klass = this;
 	
 	var me = this, o = this._ctor.prototype?this._ctor.prototype:this._ctor;
 	o.getClass = function(){
@@ -353,7 +353,7 @@ JS.mix(JS.Class, {
 	 */
 	isClass: function(clazz, loader){
 		if(JS.isString(clazz)) return this.forName(clazz,loader)?true:false;		
-		return JS.hasOwnProperty(clazz, '$class');
+		return JS.hasOwnProperty(clazz, 'klass');
 	},
 	/**
 	 * Returns true if the test object is a instance of the class, false otherwise.
@@ -371,7 +371,7 @@ JS.mix(JS.Class, {
 		var cls = clazz;
 		if(JS.isString(clazz)){
 			var clsCtor = JS.ns(clazz, loader);
-			cls = clsCtor?clsCtor.$class:null;
+			cls = clsCtor?clsCtor.klass:null;
 		}
 		
 		return obj.getClass()===cls;
@@ -401,12 +401,13 @@ JS.ClassBuilder = {
 				'fields':{},
 				'config':{}
 				};
+		//for IE enum "constructor" bug
+		rst['constructor'] = data['constructor']||function(){};
+		delete data['constructor'];
 		
 		for(key in data) {
 			if(key=='requires'){
 				rst[key] = Array.toArray(data[key])||[];
-			}else if(key=='constructor'){
-				rst[key] = data[key]||function(){};
 			}else if(key=='extend'){
 				rst[key] = data[key]||'JS.Object';
 			}else if(key=='singleton'){
@@ -499,7 +500,14 @@ JS.ClassBuilder = {
 		
 		var depends = classInfo['depends'];
 		for ( var i = 0; i < depends.length; i++) {
-			if(!loader.hasClass(depends[i])) return false;
+			var uri = depends[i], 
+			isClass = uri.startsWith('js://')||uri.startsWith('css://')?false:true;
+			
+			if(isClass){
+				if(!loader.hasClass(uri)) return false;
+			} else {
+				if(!document.getElementById(loader.id+'_'+uri)) return false;
+			}			
 		}
 		
 		return this._build(classInfo, data, loader);
@@ -518,7 +526,11 @@ JS.ClassBuilder = {
 			subc = pkg[sname];
 			JS.mix(subc, JS.Object.prototype);			
 			// add statics
-		    JS.mix(subc, rst['statics']);			
+		    JS.mix(subc, rst['statics']);
+		    
+		    subc['constructor'] = rst['constructor'];
+		    //call constructor		    
+		    rst['constructor'].apply(subc);
 		}else{
 			var me = this;
 			pkg[sname] = function(){

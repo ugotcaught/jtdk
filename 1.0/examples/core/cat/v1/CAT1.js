@@ -15,14 +15,14 @@ JS.define('my.CAT1',{
     	Version: '1.0'
     },
     changingColor: function(newValue, oldValue){
-		JS.log('Color changing-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());	
+		JS.print('Color changing-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());	
 	},
 	changedColor: function(newValue, oldValue){
-		JS.log('Color changed-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());					
+		JS.print('Color changed-> oldValue is:'+oldValue+' newValue is:'+newValue+' currentValue is:'+this.getColor());					
 	},
 	applyColor: function(newValue, oldValue){
 		var R = this.ns('JS.util.Random'), rColor = R.randomColor();
-		JS.log('Color apply-> oldValue is:'+oldValue+' newValue is:'+newValue+' applyValue is a random:'+rColor);		
+		JS.print('Color apply-> oldValue is:'+oldValue+' newValue is:'+newValue+' applyValue is a random:'+rColor);		
 		return rColor;		
 	}
 });

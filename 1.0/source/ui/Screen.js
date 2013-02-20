@@ -1,8 +1,11 @@
 (function() {
+var win = window,
+	doc = win.document,
+	createEl = doc.createElement,
+	supportSE = !!doc.addEventListener;
 
-
-JS.define('JS.util.Validator', {
-	singleton:true,
+JS.define('JS.ui.Screen', {
+	singleton:true
 	
 })
 
