@@ -1,7 +1,7 @@
 {
 	version: '1.0',
 	name: 'test',
-	createdBy: 'fengchun',
+	creator: 'feng.chun',
 	description: 'This is a demo bundle for test.',
 	license: 'Free',
 	packages: {
