@@ -33,15 +33,21 @@ JS.Class = function(classInfo, loader){
 		var pkg = loader.ns(this._info['packageName']);
 		pkg[this._info['simpleName']] = JS.Object;
 	}
-	this._ctor = loader.ns(this._info['packageName'])[this._info['simpleName']];
+	this._self = loader.ns(this._info['packageName'])[this._info['simpleName']];
 	
-	if(!this._ctor) throw new Error('Not found the class:<'+className+'> by loader.');
-	this._ctor.klass = this;
+	if(!this._self) throw new Error('Not found the class:<'+className+'> by loader.');
+	this._self.klass = this;
 	
-	var me = this, o = this._ctor.prototype?this._ctor.prototype:this._ctor;
+	var me = this, o = this._self.prototype?this._self.prototype:this._self;
 	o.getClass = function(){
 		return me;
 	}
+	
+	//now call singleton class constructor one time
+	if(this.isSingleton()){		
+		var ctor = this.getCtor();
+		ctor.apply(this.getSelf());
+    }
 };
 
 JS.mix(JS.Class.prototype, {
@@ -97,16 +103,16 @@ JS.mix(JS.Class.prototype, {
 	 * @return {Boolean} 
 	 */
 	isSingleton: function(){
-		return !this._ctor.prototype;
+		return !this._self.prototype;
 	},
 	/**
-	 * Returns the class constructor function.
+	 * Returns the class object ref.
 	 * 
-	 * @method getCtor
-	 * @return {Function} constructor function
+	 * @method getSelf
+	 * @return {Object} class object
 	 */
-	getCtor: function(){
-		return this._ctor;
+	getSelf: function(){
+		return this._self;
 	},
 	/**
 	 * Returns the super class.
@@ -126,9 +132,9 @@ JS.mix(JS.Class.prototype, {
 	 */
 	newInstance: function(){		
 		var f = function(){};
-		f.prototype = this._ctor.prototype;
+		f.prototype = this._self.prototype;
 		var obj = new f();
-		this._ctor.apply(obj, arguments);
+		this._self.apply(obj, arguments);
 		return obj;
 	},
 	/**
@@ -148,7 +154,7 @@ JS.mix(JS.Class.prototype, {
 	 * @return {Object}
 	 */
 	getStatics: function(){
-		var ctor = this._ctor,
+		var ctor = this._self,
 		    statics = undefined;
 		
 		JS.forIn(ctor, function(k){
@@ -159,6 +165,16 @@ JS.mix(JS.Class.prototype, {
 		return statics;
 	},
 	/**
+	 * Returns the class constructor function.
+	 * 
+	 * @method getSelf
+	 * @return {Function} constructor function
+	 */
+	getCtor: function(){
+		var p = this._self['prototype']?this._self['prototype']:this._self;
+		return p['constructor'];
+	},
+	/**
 	 * Returns the classe's all methods, exclude constructor, include static methods.
 	 * 
 	 * @method getMethods
@@ -167,12 +183,12 @@ JS.mix(JS.Class.prototype, {
 	getMethods: function(){
 		var members = {};
 	
-		JS.forIn(this._ctor, function(k){
+		JS.forIn(this._self, function(k){
 			if(JS.isFunction(this[k])) members[k] = this[k];
 		})		
 		if(this.isSingleton()) return members;		
 		 
-		JS.forIn(this._ctor.prototype, function(k){
+		JS.forIn(this._self.prototype, function(k){
 			if(k!='constructor' && JS.isFunction(this[k])) members[k] = this[k];
 		})
 		return members;
@@ -198,7 +214,7 @@ JS.mix(JS.Class.prototype, {
 	getFields: function(obj){
 		var members = {};
 		
-		JS.forIn(this._ctor, function(k){
+		JS.forIn(this._self, function(k){
 			if(!JS.isFunction(this[k])) members[k] = this[k];
 		})		
 		if(this.isSingleton()) return members;		
@@ -304,7 +320,7 @@ JS.mix(JS.Class.prototype, {
 		if(!md) throw new Error('This class has not a method named "'+methodName+'".');
 		
 		var sts = this.getStatics(), isStatic = sts && sts[methodName]?true:false;
-		return md.apply(isStatic?this._ctor:obj, [].slice.call(arguments, 2));
+		return md.apply(isStatic?this._self:obj, [].slice.call(arguments, 2));
 	}	
 });
 
@@ -491,7 +507,7 @@ JS.ClassBuilder = {
 	},
 	_mixs: function(classp, mixs, loader){
 		for ( var i = 0; i < mixs.length; i++) {
-			var ctor = loader.findClass(mixs[i]).getCtor();			
+			var ctor = loader.findClass(mixs[i]).getSelf();			
 			JS.mix(classp.prototype, ctor.prototype);
 		}
 	},
@@ -518,7 +534,7 @@ JS.ClassBuilder = {
 		    fname = classInfo.className,
 		    rst = this._prehandleData(data);
 		
-		var subc = null, superCtor = loader.findClass(rst['extend']).getCtor();
+		var subc = null, superCtor = loader.findClass(rst['extend']).getSelf();
 		if(rst['singleton']){
 			pkg[sname] = {
 				superclass: JS.Object.prototype	
@@ -528,9 +544,7 @@ JS.ClassBuilder = {
 			// add statics
 		    JS.mix(subc, rst['statics']);
 		    
-		    subc['constructor'] = rst['constructor'];
-		    //call constructor		    
-		    rst['constructor'].apply(subc);
+		    subc['constructor'] = rst['constructor'];		    
 		}else{
 			var me = this;
 			pkg[sname] = function(){

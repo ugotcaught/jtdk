@@ -47,7 +47,7 @@ function test1(){
 function test2(){
 	JS.imports('my.CAT2', function(){
 		JS.print(loader2===this);
-		JS.print(JS.ns('JS.Object')===JS.Class.forName('my.CAT2', this).getSuperClass().getCtor());
+		JS.print(JS.ns('JS.Object')===JS.Class.forName('my.CAT2', this).getSuperClass().getSelf());
 		JS.print(this.ns('my.CAT2'));
 	}, loader2);	
 }
