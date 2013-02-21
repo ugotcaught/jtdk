@@ -1,0 +1,16 @@
+{
+	version: '1.0',
+	name: 'test',
+	createdBy: 'fengchun',
+	description: 'This is a demo bundle for test.',
+	license: 'Free',
+	packages: {
+		'test.*':['test.base.*','test.ext.*'],
+		'test.base.*':['test.base.C1','test.base.C2'],
+		'test.ext.*':[
+		      'test.ext.C3',
+		      'test.ext.C4',
+		      'test.ext.C5',
+		      'test.ext.C6']
+	}
+}

@@ -1,0 +1,10 @@
+{
+	version: '1.0',
+	name: 'Blackbird',
+	createdBy: 'fengchun',
+	description: 'This is a blackbird demo bundle for jsdk.',
+	license: 'Free',
+	packages: {
+		'Blackbird.*': 'Blackbird.Logger'
+	}
+}
