@@ -10,8 +10,8 @@ JSDK was founded in 2007. In 2010, I opened on sourceforge: http://jsdk2.sourcef
 ###The Next Version 1.0 
 Now, JSDK has a new alias name JTDK. I'm rebuilding the next version 1.0. Github be as the main source repository.
 
-- Tonight 2013-1-7, I am announce that JSDK version 1.0 support "[Javascript Class Specification - draft 1.0](https://github.com/fch415/jss/blob/master/%231/jss%231_jcs_en.md)".  
-- Tonight 2013-2-21, JSDK version 1.0 start support "[Javascript Bundle Specification - draft 1.0](https://github.com/fch415/jss/blob/master/%232/jss%232_jbs_en.md)".
+- Tonight 2013-1-7, I announce that JSDK version 1.0 support "[Javascript Class Specification - draft 1.0](https://github.com/fch415/jss/blob/master/%231/jss%231_jcs_en.md)".  
+- Tonight 2013-2-21, JSDK version 1.0 starts support "[Javascript Bundle Specification - draft 1.0](https://github.com/fch415/jss/blob/master/%232/jss%232_jbs_en.md)".
 
 You can download all codes and examples, take a look and try it.  
 * **Note** : Those example pages support multi class-loader should be opened on a web server. So you should download jsdk into a vhost dir.*
