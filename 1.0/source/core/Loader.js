@@ -370,15 +370,6 @@ JS.Loader.prototype = {
 					return;
 				}	
 				this._loadScript(type, uri, path, onloaded);
-//			}else if(type=='jsb'){//load bundle
-//				var onloaded = function(){
-//					this._buildClass(a);
-//				};
-//				if(this.hasClass(uri)){
-//					onloaded.call(this);
-//					return;
-//				}	
-//				this._loadBundle(uri, path, onloaded);
 			}else{
 				throw new Error('An unknown URI found:'+a);
 			}		
