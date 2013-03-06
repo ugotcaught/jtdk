@@ -24,11 +24,16 @@ JS.setPath({
 });
 
 function test1(){
-	JS.imports('JS.util.Env', function(){
-		var Env = this.ns('JS.util.Env');
 		
-		JS.print(Env.os);
-		JS.print(Env.browser);
+	JS.imports('JS.util.System', function(){
+		var Sys = this.ns('JS.util.System');
+		
+		JS.print(Sys.ua);
+		JS.print(Sys.os, true);
+		JS.print(Sys.browser, true);
+		JS.print(Sys.device, true);
+		JS.print(Sys.locale, true);
+		JS.print(Sys.orient);
 	})	
 }
 

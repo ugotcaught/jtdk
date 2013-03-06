@@ -61,9 +61,8 @@
  */
 (function() {
 var OP = Object.prototype,
-	toString = OP.toString,
-	logTypes = {'undefined':1,'null':1,'string':1,'number':1,'boolean':1,'date':1,'array':1};
-
+	toString = OP.toString;
+	
 JS = {
 	version: '1.0.0-SNAPSHOT',
 	/**
@@ -71,16 +70,17 @@ JS = {
 	 * 
 	 * @method print
 	 * @param {Object} obj
+	 * @param {Boolean} stringify
 	 */
-	print: function(obj){
-		var s = (JS.typeOf(obj)) in logTypes?JS.stringify(obj):obj,
-			cosole = JS.getConfig('js.console');
+	print: function(obj, stringify){
+		var s = stringify?JS.stringify(obj):obj,
+			console = JS.getConfig('js.console');
 		if(console.postError) {
 			console.postError(s);
 		}else if(console.log) {
 			console.log(s);
 		}else {
-			console = s;
+			console(s);
 		}
 	},
 	/**
@@ -345,7 +345,7 @@ JS = {
 }
 
 var _sysConfig = {
-	'js.console': window.console?window.console:(window.opera?window.opera:window.statusbar)
+	'js.console': window.console?window.console:(window.opera?window.opera:window.alert)
 };
 /**
  * Gets the system config indicated by the specified key.
