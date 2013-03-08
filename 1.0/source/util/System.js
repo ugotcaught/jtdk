@@ -42,7 +42,7 @@ var numberify = function(s) {//convert '1.2.3.4' to 1.234
 	
     var c = 0;
     return parseFloat(s.replace(/\./g, function () {
-        return (c++ === 0) ? '.' : '';
+        return c++ === 0?'.':'';
     }));
 }
 
@@ -54,9 +54,17 @@ JS.define('JS.util.System', {
 	browser: null,
 	device: null,
 	locale: null,
-	orient: 'portrait',
+	secure: false,
+	cookieEnabled: false,
+	onLine: false,
 	
 	constructor: function(){
+		this.cookieEnabled = navigator.cookieEnabled;
+		this.onLine = navigator.onLine;
+		var loc = window && window.location,
+	        href = loc && loc.href;
+		this.secure = href && (href.toLowerCase().indexOf("https") === 0);
+		
 		var UA = navigator.userAgent
 		, ua = UA.toLowerCase()
 		, osname = null, osversion = 0
@@ -112,7 +120,12 @@ JS.define('JS.util.System', {
                 }
             }
         }		
-		this.browser = {name:bsname, version:bsversion, numberVersion:numberify(bsversion)};	
+		//browser engine
+		var engine = (ua.match(/khtml|presto|gecko/) || ['other'])[0];
+		if('khtml' == engine) engine = 'webkit';
+		if('IE' == bsname) engine = 'trident';
+		
+		this.browser = {engine: engine, name:bsname, version:bsversion, versionNumber:numberify(bsversion)};	
 		this.ua = ua;
 		
 		//locale
@@ -131,17 +144,30 @@ JS.define('JS.util.System', {
 		if(!deviceName){
 			if(ua.match(/mobile|mobi\//)) isMobile = true;
 		}
-		this.device = {name: deviceName, isMobile: isMobile, width: screen.width, height: screen.height};
 		
 		//orientation
+		var orient = null;
 		if('orientation' in window){
 			if(Math.abs(window.orientation)==90) {
-				this.orient = osname=='iOS'?'landscape':'portrait';				
+				orient = osname=='iOS'?'landscape':'portrait';				
 			}else{
-				this.orient = osname=='iOS'?'portrait':'landscape';
+				orient = osname=='iOS'?'portrait':'landscape';
 			}
-		}else{//todo:compare screen's width and height
-			
+		}
+		
+		this.device = {
+				orient:orient, 
+				name:deviceName, 
+				isMobile:isMobile, 
+				colorDepth:screen.colorDepth, 
+				availWidth:screen.availWidth, 
+				availHeight:screen.availHeight, 
+				width:screen.width, 
+				height:screen.height};
+				
+		//bugfix: IE6 background image cache bug
+		if(this.browser.name=='IE' && this.browser.versionNumber==6){
+			document.execCommand('BackgroundImageCache', false, true);
 		}
 	}
 	

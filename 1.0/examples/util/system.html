@@ -22,25 +22,38 @@
 JS.setPath({
 	'JS': '../../source'
 });
+JS.imports('JS.ui.Display');
 
 function test1(){
-		
-	JS.imports('JS.util.System', function(){
-		var Sys = this.ns('JS.util.System');
-		
-		JS.print(Sys.ua);
-		JS.print(Sys.os, true);
-		JS.print(Sys.browser, true);
-		JS.print(Sys.device, true);
-		JS.print(Sys.locale, true);
-		JS.print(Sys.orient);
-	})	
+	var Sys = JS.ns('JS.util.System');
+	
+	JS.print(Sys.ua);
+	JS.print(Sys.os, true);
+	JS.print(Sys.browser, true);
+	JS.print(Sys.device, true);
+	JS.print(Sys.locale, true);
+	JS.print(Sys.cookieEnabled);		
+	JS.print(Sys.onLine);
+}
+
+function test2(){
+	var D = JS.ns('JS.ui.Display');
+	
+	JS.print('screenX ='+D.getInfo('screenX'));
+	JS.print('screenY ='+D.getInfo('screenY'));
+	JS.print('outerWidth ='+D.getInfo('outerWidth'));
+	JS.print('outerHeight ='+D.getInfo('outerHeight'));
+	JS.print('width ='+D.getInfo('width'));
+	JS.print('height ='+D.getInfo('height'));
+	JS.print('viewWidth ='+D.getInfo('viewWidth'));
+	JS.print('viewHeight ='+D.getInfo('viewHeight'));
 }
 
 </script>
 </head>
 
 <body>
-<button onclick="test1();">test1</button>
+<button onclick="test1();">System</button>
+<button onclick="test2();">Display</button>
 </body>
 </html>
