@@ -22,7 +22,7 @@
 JS.setPath({
 	'JS': '../../source'
 });
-JS.imports('JS.ui.Display');
+JS.imports('JS.util.System');
 
 function test1(){
 	var Sys = JS.ns('JS.util.System');
@@ -36,24 +36,10 @@ function test1(){
 	JS.print(Sys.onLine);
 }
 
-function test2(){
-	var D = JS.ns('JS.ui.Display');
-	
-	JS.print('screenX ='+D.getInfo('screenX'));
-	JS.print('screenY ='+D.getInfo('screenY'));
-	JS.print('outerWidth ='+D.getInfo('outerWidth'));
-	JS.print('outerHeight ='+D.getInfo('outerHeight'));
-	JS.print('width ='+D.getInfo('width'));
-	JS.print('height ='+D.getInfo('height'));
-	JS.print('viewWidth ='+D.getInfo('viewWidth'));
-	JS.print('viewHeight ='+D.getInfo('viewHeight'));
-}
-
 </script>
 </head>
 
 <body>
 <button onclick="test1();">System</button>
-<button onclick="test2();">Display</button>
 </body>
 </html>

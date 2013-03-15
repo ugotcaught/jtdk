@@ -17,61 +17,57 @@ JS.define('JS.util.Random', {
 	/**
      * Returns a random id.
      * 
-     * @method randomID
+     * @method id
      * @return {String} The id value
      */
-    randomID: function(){
+    id: function(){
     	var t = new Date().getTime();
     	return t+''+Math.floor(Math.random()*t);
     },
     /**
      * Returns a random number in [min,max).
      * 
-     * @method random
+     * @method number
      * @param {Number} min
      * @param {Number} max
      * @param {Boolean} isFloat:optional
      * @return {Number} The default is Integer
      */
-    randomNumber: function(n, m, isFloat){
+    number: function(n, m, isFloat){
     		var x = Math.random()*(m-n)+n;
     		return isFloat?x:Math.floor(x);
     },
     /**
      * Returns a random item in a array.
      * 
-     * @method randomEnum
+     * @method select
      * @param {Array} array
      * @return {Object}
      */
-    randomEnum: function(array){
-    	if(!array || array.length<=0) return null;
-    	if(array.length < 2) return array[0];
-    	
-    	return array[this.randomNumber(0, array.length)];
+    select: function(array){
+    	if(array.length < 2) return array[0];    	
+    	return array[this.number(0, array.length)];
     },
     /**
      * Returns a random True or False.
      * 
-     * @method randomBoolean
+     * @method bool
      * @return {Boolean}
      */
-    randomBoolean: function(){
-    	return this.randomEnum([true, false]);
+    bool: function(){
+    	return this.select([true, false]);
     },
     /**
      * Returns a random color RGB value.
      * 
-     * @method randomColor
+     * @method color
      * @return {String}
      */
-    randomColor: function(){
-    	var a = '0123456789abcdef'.split('');
-    	var c = [];
+    color: function(){
+    	var a = '0123456789abcdef'.split(''),c = [];
     	for ( var i=0; i < 6; ++i ) {
-    		c.push(this.randomEnum(a));
+    		c.push(this.select(a));
     	}	
     	return '#'+c.join('');
-    }
-	
+    }	
 });

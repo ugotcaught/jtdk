@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--
+/**
+ * @project JSDK JavaScript Development Kit
+ * @copyright Copyright(c) 2004-2012, Dragonfly.org. All rights reserved.
+ * @license LGPLv3
+ * @author fengchun
+-->
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>JSDK Example</title>
+
+<style type="text/css">
+.skin0{
+	background-color:#fed;
+}
+.skin1{
+	background-color:#fcc;
+}
+</style>
+
+<script language="JavaScript" type="text/javascript" src="../../source/core/Base.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Object.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Class.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/core/Loader.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/util/System.js"></script>
+<script language="JavaScript" type="text/javascript" src="../../source/ui/Display.js"></script>
+
+<script>
+JS.setPath({
+	'JS': '../../source'
+});
+JS.imports('JS.ui.Display');
+
+function test1(){
+	var D = JS.ns('JS.ui.Display');
+	
+	JS.print('screenX ='+D.info('screenX'));
+	JS.print('screenY ='+D.info('screenY'));
+	JS.print('outerWidth ='+D.info('outerWidth'));
+	JS.print('outerHeight ='+D.info('outerHeight'));
+	JS.print('width ='+D.info('width'));
+	JS.print('height ='+D.info('height'));
+	JS.print('innerWidth ='+D.info('innerWidth'));
+	JS.print('innerHeight ='+D.info('innerHeight'));
+	JS.print('scrollX ='+D.info('scrollX'));
+	JS.print('scrollY ='+D.info('scrollY'));	
+}
+
+function test2(obj){
+	var D = JS.ns('JS.ui.Display');
+	
+	D.addCSS(obj, 'skin1');
+	JS.print(D.hasCSS(obj, 'skin0'));
+	JS.print(D.hasCSS(obj, 'skin1'));
+	JS.print(D.getAttr(obj, 'className'));
+}
+
+function test3(obj){
+	var D = JS.ns('JS.ui.Display');
+	
+	D.removeCSS(obj, 'skin0');
+	JS.print(D.hasCSS(obj, 'skin0'));
+	JS.print(D.getAttr(obj, 'className'));
+}
+
+function test4(obj){
+	var D = JS.ns('JS.ui.Display');
+	
+	var name = D.getAttr(obj, 'className');
+	D.replaceCSS(obj, name, name=='skin1'?'skin0':'skin1');
+	JS.print(D.getAttr(obj, 'className'));
+}
+
+function test5(obj){
+	var D = JS.ns('JS.ui.Display');
+	
+	var name = D.getAttr(obj, 'className');
+	D.setStyle(obj, 'opacity', 0.5);
+}
+</script>
+</head>
+
+<body>
+<button onclick="test1();">Info</button>
+<button onclick="test2(this);" class="skin0">Add CSS</button>
+<button onclick="test3(this);" class="skin0">Remove CSS</button>
+<button onclick="test4(this);" class="skin0">Replace CSS</button>
+<button onclick="test5(this);">set style</button>
+</body>
+</html>

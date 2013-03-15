@@ -931,16 +931,18 @@ Array.prototype.lastIndexOf = function(elt, from, fn, thisp){
  * @method forEach
  * @param {Function} fn
  * @param {Object}   thisp:optional the function's this
+ * @return {Array} new array of executed result
  * @throws {TypeError} The argument<fn> is not function
  */
-Array.prototype.forEach = Array.prototype.forEach || function(fn, thisp){
+Array.prototype.forEach = function(fn, thisp){
 	if (typeof fn !== "function") throw new TypeError(fn + "is not a function.");
 	  
-	var len = this.length >>> 0, thisP = thisp||this;
+	var len = this.length >>> 0, thisP = thisp||this, rst = [];
     
     for (var i = 0; i < len; i++){
-    	fn.call(thisP, this[i], i, this);
-    }	
+    	rst[rst.length] = fn.call(thisP, this[i], i, this);
+    }
+    return rst;
 };
 /**
  * Returns a new array.
